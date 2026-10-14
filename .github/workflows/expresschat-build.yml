@@ -1,0 +1,13 @@
+name: ExpressChat Remoto - gerar instalador Windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: ./.github/workflows/flutter-build.yml
+    secrets: inherit
+    with:
+      upload-artifact: true
+      upload-tag: "expresschat"
+      windows-only: true

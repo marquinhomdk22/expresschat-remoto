@@ -12,6 +12,9 @@ on:
       publish-update-metadata:
         type: boolean
         default: false
+      windows-only:
+        type: boolean
+        default: false
 
 # NOTE: F-Droid builder script 'flutter/build_fdroid.sh' reads environment
 # variables from this workflow!
@@ -59,6 +62,7 @@ env:
 
 jobs:
   validate-update-metadata-keys:
+    if: ${{ !inputs.windows-only }}
     runs-on: ubuntu-22.04
     permissions:
       contents: read
@@ -95,6 +99,7 @@ jobs:
         run: python res/update/generate_update_metadata.py check-key
 
   generate-sbom:
+    if: ${{ !inputs.windows-only }}
     needs: [validate-update-metadata-keys]
     runs-on: ubuntu-latest
 
@@ -189,6 +194,21 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           submodules: recursive
+
+      - name: ExpressChat - servidor e chave proprios
+        shell: bash
+        env:
+          EC_SERVER: ${{ secrets.RENDEZVOUS_SERVER }}
+          EC_KEY: ${{ secrets.RS_PUB_KEY }}
+        run: |
+          f=libs/hbb_common/src/config.rs
+          if [ -n "$EC_SERVER" ] && [ -n "$EC_KEY" ]; then
+            sed -i "s|pub const RENDEZVOUS_SERVERS: &\[&str\] = &\[\".*\"\];|pub const RENDEZVOUS_SERVERS: \&[\&str] = \&[\"$EC_SERVER\"];|" "$f"
+            sed -i "s|pub const RS_PUB_KEY: &str = \".*\";|pub const RS_PUB_KEY: \&str = \"$EC_KEY\";|" "$f"
+          else
+            echo "::warning::Secrets RENDEZVOUS_SERVER/RS_PUB_KEY vazios - usando servidor padrao"
+          fi
+          grep -n "pub const RENDEZVOUS_SERVERS\|pub const RS_PUB_KEY" "$f"
 
       - name: Restore bridge files
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -544,6 +564,7 @@ jobs:
 
   # The fallback for the flutter version, we use Sciter for 32bit Windows.
   build-for-windows-sciter:
+    if: ${{ !inputs.windows-only }}
     name: ${{ matrix.job.target }} (${{ matrix.job.os }})
     needs: [validate-update-metadata-keys]
     runs-on: ${{ matrix.job.os }}
@@ -725,7 +746,7 @@ jobs:
             ./SignOutput/rustdesk-*.exe
 
   build-rustdesk-ios:
-    if: ${{ inputs.upload-artifact }}
+    if: ${{ !inputs.windows-only && (inputs.upload-artifact) }}
     name: build rustdesk ios ipa
     runs-on: ${{ matrix.job.os }}
     needs: [generate-bridge]
@@ -847,6 +868,7 @@ jobs:
 
 
   build-for-macOS:
+    if: ${{ !inputs.windows-only }}
     name: ${{ matrix.job.target }}
     runs-on: ${{ matrix.job.os }}
     needs: [generate-bridge]
@@ -1119,7 +1141,7 @@ jobs:
   publish-signed-update-metadata:
     needs: [build-for-windows-flutter, build-for-windows-sciter, build-for-macOS]
     runs-on: ubuntu-22.04
-    if: ${{ inputs.upload-artifact && inputs.publish-update-metadata && github.repository == 'rustdesk/rustdesk' }}
+    if: ${{ !inputs.windows-only && (inputs.upload-artifact && inputs.publish-update-metadata && github.repository == 'rustdesk/rustdesk') }}
     concurrency:
       group: signed-update-${{ inputs.upload-tag }}
       cancel-in-progress: false
@@ -1257,7 +1279,7 @@ jobs:
       - build-for-windows-flutter
       - build-for-windows-sciter
     runs-on: ubuntu-latest
-    if: ${{ inputs.upload-artifact }}
+    if: ${{ !inputs.windows-only && (inputs.upload-artifact) }}
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -1313,6 +1335,7 @@ jobs:
           files: rustdesk-${{ env.VERSION }}-unsigned.tar.gz
 
   build-rustdesk-android:
+    if: ${{ !inputs.windows-only }}
     needs: [generate-bridge]
     name: build rustdesk android apk ${{ matrix.job.target }}
     runs-on: ${{ matrix.job.os }}
@@ -1608,7 +1631,7 @@ jobs:
   build-rustdesk-android-universal:
     needs: [build-rustdesk-android]
     name: build rustdesk android universal apk
-    if: ${{ inputs.upload-artifact }}
+    if: ${{ !inputs.windows-only && (inputs.upload-artifact) }}
     runs-on: ubuntu-24.04
     env:
       reltype: release
@@ -1791,6 +1814,7 @@ jobs:
             signed-apk/rustdesk-${{ env.VERSION }}-universal${{ env.suffix }}.apk
 
   build-rustdesk-linux:
+    if: ${{ !inputs.windows-only }}
     needs: [generate-bridge]
     name: build rustdesk linux ${{ matrix.job.target }}
     runs-on: ${{ matrix.job.on }}
@@ -2140,6 +2164,7 @@ jobs:
   # old for it. A separate job rather than a matrix entry of build-rustdesk-linux: appimage and
   # flatpak need that job, and a failure here must not skip them.
   build-rustdesk-linux-drm:
+    if: ${{ !inputs.windows-only }}
     needs: [generate-bridge]
     name: build rustdesk linux drm x86_64
     runs-on: ubuntu-22.04
@@ -2459,7 +2484,7 @@ jobs:
           path: ${{ env.DRM_DEB }}
 
   build-rustdesk-linux-sciter:
-    if: ${{ inputs.upload-artifact }}
+    if: ${{ !inputs.windows-only && (inputs.upload-artifact) }}
     needs: [validate-update-metadata-keys]
     runs-on: ${{ matrix.job.on }}
     name: build-rustdesk-linux-sciter ${{ matrix.job.target }}
@@ -2705,7 +2730,7 @@ jobs:
     name: Build appimage ${{ matrix.job.target }}
     needs: [build-rustdesk-linux]
     runs-on: ubuntu-22.04
-    if: ${{ inputs.upload-artifact }}
+    if: ${{ !inputs.windows-only && (inputs.upload-artifact) }}
     strategy:
       fail-fast: false
       matrix:
@@ -2760,7 +2785,7 @@ jobs:
       - build-rustdesk-linux
       - build-rustdesk-linux-sciter
     runs-on: ${{ matrix.job.on }}
-    if: ${{ inputs.upload-artifact }}
+    if: ${{ !inputs.windows-only && (inputs.upload-artifact) }}
     strategy:
       fail-fast: false
       matrix:

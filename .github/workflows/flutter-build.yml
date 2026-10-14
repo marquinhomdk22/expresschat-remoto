@@ -197,8 +197,8 @@ jobs:
       - name: ExpressChat - servidor e chave proprios
         shell: bash
         env:
-          EC_SERVER: ${{ secrets.RENDEZVOUS_SERVER }}
-          EC_KEY: ${{ secrets.RS_PUB_KEY }}
+          EC_SERVER: ${{ secrets.RENDEZVOUS_SERVER || 'remoto.link-br.site' }}
+          EC_KEY: ${{ secrets.RS_PUB_KEY || '2oKFRdFvHUD0XraFIu6bmCiaMr2FtRxI6LHVXA5oU7A=' }}
         run: |
           f=libs/hbb_common/src/config.rs
           if [ -n "$EC_SERVER" ] && [ -n "$EC_KEY" ]; then

@@ -1,0 +1,938 @@
+diff --git a/index.html b/index.html
+index 9fe6c1d..f43c51e 100644
+--- a/index.html
++++ b/index.html
+@@ -1,10 +1,10 @@
+ <!DOCTYPE html>
+-<html lang="en">
++<html lang="pt-BR">
+   <head>
+     <meta charset="UTF-8" />
+     <link rel="icon" href="/favicon.ico" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+-    <title>Rustdesk API Admin</title>
++    <title>ExpressChat Remoto</title>
+   </head>
+   <body>
+     <div id="app"></div>
+diff --git a/src/router/index.js b/src/router/index.js
+index 7a18b97..1b9789b 100644
+--- a/src/router/index.js
++++ b/src/router/index.js
+@@ -32,6 +32,21 @@ const constantRoutes = [
+   },
+ ]
+ export const asyncRoutes = [
++  {
++    path: '/painel',
++    name: 'Dashboard',
++    redirect: '/painel/geral',
++    meta: { title: 'Dashboard', icon: 'DataAnalysis' },
++    component: () => import('@/layout/index.vue'),
++    children: [
++      {
++        path: 'geral',
++        name: 'DashboardIndex',
++        meta: { title: 'Dashboard', icon: 'DataAnalysis' },
++        component: () => import('@/views/dashboard/index.vue'),
++      },
++    ],
++  },
+   // {
+   //   path: '/',
+   //   name: 'Index',
+diff --git a/src/store/app.js b/src/store/app.js
+index 46caaf3..02b7d1e 100644
+--- a/src/store/app.js
++++ b/src/store/app.js
+@@ -7,9 +7,11 @@ import ru from 'element-plus/es/locale/lang/ru'
+ import fr from 'element-plus/es/locale/lang/fr'
+ import es from 'element-plus/es/locale/lang/es'
+ import zhTw from 'element-plus/es/locale/lang/zh-tw'
++import ptBr from 'element-plus/es/locale/lang/pt-br'
+ import { admin, app, server } from '@/api/config'
+ 
+ const langs = {
++  'pt-BR': { name: 'Português', value: ptBr, sideBarWidth: '260px' },
+   'zh-CN': { name: '中文', value: zhCn, sideBarWidth: '210px' },
+   'en': { name: 'English', value: en, sideBarWidth: '230px' },
+   'fr': { name: 'Français', value: fr, sideBarWidth: '280px' },
+@@ -18,12 +20,12 @@ const langs = {
+   'es': { name: 'Español', value: es, sideBarWidth: '280px' },
+   'zh-TW': { name: '中文繁体', value: zhTw, sideBarWidth: '210px' },
+ }
+-const defaultLang = localStorage.getItem('lang') || navigator.language || 'zh-CN'
++const defaultLang = localStorage.getItem('lang') || 'pt-BR'
+ export const useAppStore = defineStore({
+   id: 'App',
+   state: () => ({
+     setting: {
+-      title: 'Rustdesk API Admin',
++      title: 'ExpressChat Remoto',
+       hello: '',
+       sideIsCollapse: false,
+       logo,
+diff --git a/src/utils/i18n.js b/src/utils/i18n.js
+index 5c6878b..dc3e558 100644
+--- a/src/utils/i18n.js
++++ b/src/utils/i18n.js
+@@ -5,9 +5,11 @@ import ko from '@/utils/i18n/ko.json'
+ import ru from '@/utils/i18n/ru.json'
+ import es from '@/utils/i18n/es.json'
+ import zhTW from '@/utils/i18n/zh_TW.json'
++import ptBR from '@/utils/i18n/pt_BR.json'
+ import { useAppStore } from '@/store/app'
+ 
+ const trans = {
++  'pt-BR': ptBR,
+   'en': en,
+   'fr': fr,
+   'zh-CN': zhCN,
+diff --git a/src/utils/i18n/pt_BR.json b/src/utils/i18n/pt_BR.json
+new file mode 100644
+index 0000000..daf1fa2
+--- /dev/null
++++ b/src/utils/i18n/pt_BR.json
+@@ -0,0 +1,589 @@
++{
++  "Login": {
++    "One": "Entrar"
++  },
++  "Logout": {
++    "One": "Sair"
++  },
++  "Register": {
++    "One": "Cadastrar"
++  },
++  "Confirm": {
++    "One": "Confirmar"
++  },
++  "Username": {
++    "One": "Usuário"
++  },
++  "Password": {
++    "One": "Senha"
++  },
++  "LoginSuccess": {
++    "One": "Login realizado"
++  },
++  "ForgotPassword": {
++    "One": "Esqueci a senha"
++  },
++  "ResetPassword": {
++    "One": "Redefinir senha"
++  },
++  "ChangePassword": {
++    "One": "Alterar senha"
++  },
++  "Userinfo": {
++    "One": "Meus dados"
++  },
++  "ParamRequired": {
++    "One": "{param} é obrigatório"
++  },
++  "HasBind": {
++    "One": "Vinculado"
++  },
++  "NoBind": {
++    "One": "Não vinculado"
++  },
++  "UnBind": {
++    "One": "Desvincular"
++  },
++  "ToBind": {
++    "One": "Vincular"
++  },
++  "Confirm?": {
++    "One": "Confirmar {param}?"
++  },
++  "Cancel": {
++    "One": "Cancelar"
++  },
++  "Platform": {
++    "One": "Plataforma"
++  },
++  "Status": {
++    "One": "Status"
++  },
++  "Actions": {
++    "One": "Ações"
++  },
++  "Filter": {
++    "One": "Filtrar"
++  },
++  "Add": {
++    "One": "Adicionar"
++  },
++  "Hostname": {
++    "One": "Nome do computador"
++  },
++  "Alias": {
++    "One": "Apelido"
++  },
++  "Hash": {
++    "One": "Hash"
++  },
++  "Tags": {
++    "One": "Etiquetas"
++  },
++  "Edit": {
++    "One": "Editar"
++  },
++  "Delete": {
++    "One": "Excluir"
++  },
++  "Create": {
++    "One": "Criar"
++  },
++  "Update": {
++    "One": "Atualizar"
++  },
++  "LoginName": {
++    "One": "Login"
++  },
++  "Submit": {
++    "One": "Enviar"
++  },
++  "OperationSuccess": {
++    "One": "Feito com sucesso"
++  },
++  "Owner": {
++    "One": "Dono"
++  },
++  "Name": {
++    "One": "Nome"
++  },
++  "Color": {
++    "One": "Cor"
++  },
++  "CreatedAt": {
++    "One": "Criado em"
++  },
++  "UpdatedAt": {
++    "One": "Atualizado em"
++  },
++  "Memory": {
++    "One": "Memória"
++  },
++  "Os": {
++    "One": "Sistema"
++  },
++  "Uuid": {
++    "One": "UUID"
++  },
++  "Version": {
++    "One": "Versão"
++  },
++  "Type": {
++    "One": "Tipo"
++  },
++  "Group": {
++    "One": "Grupo"
++  },
++  "CommonGroup": {
++    "One": "Grupo comum"
++  },
++  "CommonGroupNote": {
++    "One": "Só administradores veem os membros do grupo e seus computadores"
++  },
++  "SharedGroup": {
++    "One": "Grupo compartilhado"
++  },
++  "SharedGroupNote": {
++    "One": "Todos os usuários veem os membros do grupo e seus computadores"
++  },
++  "Nickname": {
++    "One": "Apelido"
++  },
++  "UserTags": {
++    "One": "Etiquetas do usuário"
++  },
++  "UserAddressBook": {
++    "One": "Agenda do usuário"
++  },
++  "IsAdmin": {
++    "One": "Administrador"
++  },
++  "PleaseInputNewPassword": {
++    "One": "Digite a nova senha"
++  },
++  "AutoRegister": {
++    "One": "Cadastro automático"
++  },
++  "AutoRegisterNote": {
++    "One": "Se ativado, uma conta é criada automaticamente quando alguém entra com OAuth sem vincular uma conta existente"
++  },
++  "ThirdName": {
++    "One": "Nome externo"
++  },
++  "Close": {
++    "One": "Fechar"
++  },
++  "OauthBinding": {
++    "One": "Você está autorizando o vínculo"
++  },
++  "OauthLogining": {
++    "One": "Você está autorizando o login"
++  },
++  "OauthCloseNote": {
++    "One": "Se não foi você, feche esta página"
++  },
++  "OperationSuccessAndCloseAfter3Seconds": {
++    "One": "Feito com sucesso. Fechando em 3 segundos"
++  },
++  "ConfirmOauth": {
++    "One": "Confirmar OAuth"
++  },
++  "Device": {
++    "One": "Computador"
++  },
++  "ChangeLang": {
++    "One": "Idioma"
++  },
++  "My": {
++    "One": "Minha conta"
++  },
++  "Info": {
++    "One": "Informações"
++  },
++  "AddressBooks": {
++    "One": "Agenda"
++  },
++  "System": {
++    "One": "Administração"
++  },
++  "PeerManage": {
++    "One": "Computadores"
++  },
++  "AddressBookManage": {
++    "One": "Agendas"
++  },
++  "GroupManage": {
++    "One": "Grupos de usuários"
++  },
++  "UserManage": {
++    "One": "Usuários"
++  },
++  "UserAdd": {
++    "One": "Novo usuário"
++  },
++  "UserEdit": {
++    "One": "Editar usuário"
++  },
++  "TagsManage": {
++    "One": "Etiquetas"
++  },
++  "OauthManage": {
++    "One": "OAuth"
++  },
++  "LoginLog": {
++    "One": "Histórico de login"
++  },
++  "LastOnlineTime": {
++    "One": "Visto por último"
++  },
++  "JustNow": {
++    "One": "Agora mesmo"
++  },
++  "MinutesAgo": {
++    "One": "Há {param} minuto",
++    "Other": "Há {param} minutos"
++  },
++  "HoursAgo": {
++    "One": "Há {param} hora",
++    "Other": "Há {param} horas"
++  },
++  "DaysAgo": {
++    "One": "Há {param} dia",
++    "Other": "Há {param} dias"
++  },
++  "MonthsAgo": {
++    "One": "Há {param} mês",
++    "Other": "Há {param} meses"
++  },
++  "YearsAgo": {
++    "One": "Há {param} ano",
++    "Other": "Há {param} anos"
++  },
++  "MinutesLess": {
++    "One": "Menos de {param} minuto",
++    "Other": "Menos de {param} minutos"
++  },
++  "HoursLess": {
++    "One": "Menos de {param} hora",
++    "Other": "Menos de {param} horas"
++  },
++  "DaysLess": {
++    "One": "Menos de {param} dia",
++    "Other": "Menos de {param} dias"
++  },
++  "Export": {
++    "One": "Exportar"
++  },
++  "AddToAddressBook": {
++    "One": "Adicionar à agenda"
++  },
++  "BatchDelete": {
++    "One": "Excluir selecionados"
++  },
++  "PleaseSelectData": {
++    "One": "Selecione pelo menos um item"
++  },
++  "PasswordType": {
++    "One": "Tipo de senha"
++  },
++  "OncePassword": {
++    "One": "Senha de uso único"
++  },
++  "FixedPassword": {
++    "One": "Senha fixa"
++  },
++  "FixedPasswordWarning": {
++    "One": "Senhas fixas podem vazar. Use com cuidado; o recomendado é a senha de uso único"
++  },
++  "ExpireTime": {
++    "One": "Expira em"
++  },
++  "ShareByWebClient": {
++    "One": "Compartilhar pelo navegador"
++  },
++  "Minutes": {
++    "One": "{param} minuto",
++    "Other": "{param} minutos"
++  },
++  "Hours": {
++    "One": "{param} hora",
++    "Other": "{param} horas"
++  },
++  "Days": {
++    "One": "{param} dia",
++    "Other": "{param} dias"
++  },
++  "Weeks": {
++    "One": "{param} semana",
++    "Other": "{param} semanas"
++  },
++  "Months": {
++    "One": "{param} mês",
++    "Other": "{param} meses"
++  },
++  "Forever": {
++    "One": "Sem prazo"
++  },
++  "Error": {
++    "One": "Erro"
++  },
++  "IDNotExist": {
++    "One": "ID não existe"
++  },
++  "RemoteDesktopOffline": {
++    "One": "O computador está offline"
++  },
++  "KeyMismatch": {
++    "One": "Chave não confere"
++  },
++  "KeyOveruse": {
++    "One": "Chave usada demais"
++  },
++  "Link": {
++    "One": "Link"
++  },
++  "CopySuccess": {
++    "One": "Copiado"
++  },
++  "CopyFailed": {
++    "One": "Não foi possível copiar"
++  },
++  "Timeout": {
++    "One": "Tempo esgotado"
++  },
++  "AuditConnLog": {
++    "One": "Histórico de conexões"
++  },
++  "Peer": {
++    "One": "Computador",
++    "Other": "Computadores"
++  },
++  "FromPeer": {
++    "One": "De (computador)"
++  },
++  "FromName": {
++    "One": "De (nome)"
++  },
++  "CloseTime": {
++    "One": "Encerrado em"
++  },
++  "AuditFileLog": {
++    "One": "Histórico de arquivos"
++  },
++  "Common": {
++    "One": "Geral"
++  },
++  "File": {
++    "One": "Arquivo"
++  },
++  "Num": {
++    "One": "Qtd."
++  },
++  "Ip": {
++    "One": "IP"
++  },
++  "FileName": {
++    "One": "Nome do arquivo"
++  },
++  "FileInfo": {
++    "One": "Detalhes do arquivo"
++  },
++  "Path": {
++    "One": "Caminho"
++  },
++  "IndexNum": {
++    "One": "Nº"
++  },
++  "ToRemote": {
++    "One": "Enviado"
++  },
++  "ToLocal": {
++    "One": "Recebido"
++  },
++  "AddressBookName": {
++    "One": "Nomes de agenda"
++  },
++  "AddRule": {
++    "One": "Adicionar regra"
++  },
++  "ShareRules": {
++    "One": "Regras de compartilhamento"
++  },
++  "Rule": {
++    "One": "Regra"
++  },
++  "Read": {
++    "One": "Só ver"
++  },
++  "ReadWrite": {
++    "One": "Ver e editar"
++  },
++  "FullControl": {
++    "One": "Controle total"
++  },
++  "ShareTo": {
++    "One": "Compartilhar com"
++  },
++  "MyAddressBook": {
++    "One": "Minha agenda"
++  },
++  "AddressBook": {
++    "One": "Agenda"
++  },
++  "AddressBookNameManage": {
++    "One": "Nomes de agenda"
++  },
++  "MyAddressBookTips": {
++    "One": "\"Minha agenda\" é a padrão do sistema e não pode ser alterada nem excluída"
++  },
++  "LastOnlineIp": {
++    "One": "Último IP"
++  },
++  "OldPassword": {
++    "One": "Senha atual"
++  },
++  "NewPasswordEqualOldPassword": {
++    "One": "A nova senha não pode ser igual à atual"
++  },
++  "NewPassword": {
++    "One": "Nova senha"
++  },
++  "ConfirmPassword": {
++    "One": "Confirmar senha"
++  },
++  "PasswordNotMatchConfirmPassword": {
++    "One": "As senhas não conferem"
++  },
++  "ToLogin": {
++    "One": "Ir para o login"
++  },
++  "UserToken": {
++    "One": "Sessões ativas"
++  },
++  "BatchAddToAB": {
++    "One": "Adicionar selecionados à agenda"
++  },
++  "BatchEditTags": {
++    "One": "Editar etiquetas dos selecionados"
++  },
++  "User": {
++    "One": "Usuário"
++  },
++  "ShareRecord": {
++    "One": "Compartilhamentos"
++  },
++  "Second": {
++    "One": "Segundo"
++  },
++  "Captcha": {
++    "One": "Código de verificação"
++  },
++  "ServerCmd": {
++    "One": "Comandos do servidor"
++  },
++  "Simple": {
++    "One": "Simples"
++  },
++  "Advanced": {
++    "One": "Avançado"
++  },
++  "Available": {
++    "One": "Disponível"
++  },
++  "NotAvailable": {
++    "One": "Indisponível"
++  },
++  "ServerCmdTips": {
++    "One": "Recurso experimental. A API, o hbbs e o hbbr precisam estar no mesmo endereço local. Mais detalhes na {wiki}"
++  },
++  "Refresh": {
++    "One": "Atualizar"
++  },
++  "Save": {
++    "One": "Salvar"
++  },
++  "SendCustom": {
++    "One": "Enviar personalizado"
++  },
++  "Send": {
++    "One": "Enviar"
++  },
++  "SendCmd": {
++    "One": "Enviar comando"
++  },
++  "Result": {
++    "One": "Resultado"
++  },
++  "DeviceGroupManage": {
++    "One": "Grupos de computadores (lojas)"
++  },
++  "Drop file here or click to upload": {
++    "One": "Arraste o arquivo aqui ou clique para enviar"
++  },
++  "Please upload csv file": {
++    "One": "Envie um arquivo CSV"
++  },
++  "Columns": {
++    "One": "Colunas"
++  },
++  "You can reference export file": {
++    "One": "Use o arquivo exportado como modelo"
++  },
++  "Remark": {
++    "One": "Observação"
++  },
++  "MyPeer": {
++    "One": "Meus computadores"
++  },
++  "Bind": {
++    "One": "Vincular"
++  },
++  "Email": {
++    "One": "E-mail"
++  },
++  "ID": {
++    "One": "ID"
++  },
++  "Id": {
++    "One": "ID"
++  },
++  "Import": {
++    "One": "Importar"
++  },
++  "Information": {
++    "One": "Informações"
++  },
++  "InvalidParam": {
++    "One": "Dado inválido"
++  },
++  "More": {
++    "One": "Mais"
++  },
++  "Op": {
++    "One": "Ação"
++  },
++  "Size": {
++    "One": "Tamanho"
++  },
++  "Success": {
++    "One": "Sucesso"
++  },
++  "Token": {
++    "One": "Token"
++  },
++  "View": {
++    "One": "Ver"
++  },
++  "OauthBind": {
++    "One": "Vincular OAuth"
++  },
++  "OauthLogin": {
++    "One": "Login OAuth"
++  },
++  "首页": {
++    "One": "Início"
++  },
++  "Dashboard": {
++    "One": "Dashboard"
++  }
++}
+\ No newline at end of file
+diff --git a/src/views/dashboard/index.vue b/src/views/dashboard/index.vue
+new file mode 100644
+index 0000000..4f64e0e
+--- /dev/null
++++ b/src/views/dashboard/index.vue
+@@ -0,0 +1,246 @@
++<template>
++  <div class="dash" v-loading="loading">
++    <div class="dash-head">
++      <div>
++        <h2>Visão geral</h2>
++        <p>Atendimentos remotos dos últimos {{ days }} dias</p>
++      </div>
++      <el-radio-group v-model="days" @change="load">
++        <el-radio-button :label="7">7 dias</el-radio-button>
++        <el-radio-button :label="30">30 dias</el-radio-button>
++        <el-radio-button :label="90">90 dias</el-radio-button>
++      </el-radio-group>
++    </div>
++
++    <div class="kpis">
++      <div class="kpi" v-for="(k, i) in kpis" :key="k.label" :style="{ animationDelay: i * 80 + 'ms' }">
++        <div class="kpi-icon" :style="{ background: k.bg, color: k.color }">
++          <el-icon><component :is="k.icon"/></el-icon>
++        </div>
++        <div>
++          <div class="kpi-num">{{ k.value }}<small v-if="k.unit"> {{ k.unit }}</small></div>
++          <div class="kpi-label">{{ k.label }}</div>
++        </div>
++      </div>
++    </div>
++
++    <div class="card">
++      <div class="card-title">Acessos por dia</div>
++      <div class="chart" v-if="perDay.max">
++        <div class="col" v-for="d in perDay.list" :key="d.key" :title="d.label + ': ' + d.count + ' acesso(s)'">
++          <span class="val" v-if="d.count">{{ d.count }}</span>
++          <div class="bar" :style="{ height: (d.count / perDay.max * 100) + '%' }"></div>
++          <span class="lbl">{{ d.short }}</span>
++        </div>
++      </div>
++      <div class="empty" v-else>Nenhum acesso no período</div>
++    </div>
++
++    <div class="grid">
++      <div class="card">
++        <div class="card-title">Lojas que mais pedem suporte</div>
++        <rank :items="byStore" unit="acesso" color="#17B39B"/>
++      </div>
++      <div class="card">
++        <div class="card-title">Computadores com mais acessos</div>
++        <rank :items="byPeer" unit="acesso" color="#3F86C0"/>
++      </div>
++      <div class="card">
++        <div class="card-title">Atendimentos por técnico</div>
++        <rank :items="byTech" unit="acesso" color="#8B6FD6"/>
++      </div>
++      <div class="card">
++        <div class="card-title">Tempo de atendimento por loja</div>
++        <rank :items="timeByStore" unit="min" color="#E8A33D"/>
++      </div>
++    </div>
++  </div>
++</template>
++
++<script setup>
++import { ref, computed, onMounted, h } from 'vue'
++import { list as auditList } from '@/api/audit'
++import { list as peerList } from '@/api/peer'
++import { list as groupList } from '@/api/device_group'
++
++const Rank = (props) => {
++  if (!props.items.length) return h('div', { class: 'empty' }, 'Sem dados no período')
++  const max = props.items[0].value || 1
++  return h('div', { class: 'rank' }, props.items.map((it, i) => h('div', { class: 'rank-row' }, [
++    h('span', { class: 'pos' }, i + 1),
++    h('div', { class: 'rank-main' }, [
++      h('div', { class: 'rank-top' }, [
++        h('span', { class: 'name', title: it.sub || '' }, it.name),
++        h('b', null, `${it.value} ${props.unit}${it.value === 1 || props.unit === 'min' ? '' : 's'}`),
++      ]),
++      h('div', { class: 'track' }, h('div', {
++        class: 'fill',
++        style: { width: (it.value / max * 100) + '%', background: props.color, animationDelay: i * 60 + 'ms' },
++      })),
++    ]),
++  ])))
++}
++Rank.props = ['items', 'unit', 'color']
++
++const days = ref(30)
++const loading = ref(false)
++const conns = ref([])
++const peers = ref([])
++const groups = ref([])
++
++const parseTime = (t) => {
++  if (!t) return 0
++  if (typeof t === 'number') return t > 1e12 ? t : t * 1000
++  return new Date(String(t).replace(' ', 'T')).getTime() || 0
++}
++
++const fetchAll = async (fn, params = {}, max = 20) => {
++  const out = []
++  for (let page = 1; page <= max; page++) {
++    const res = await fn({ ...params, page, page_size: 500 }).catch(_ => false)
++    const rows = res?.data?.list || []
++    out.push(...rows)
++    if (rows.length < 500) break
++  }
++  return out
++}
++
++const load = async () => {
++  loading.value = true
++  const [c, p, g] = await Promise.all([fetchAll(auditList), fetchAll(peerList), fetchAll(groupList)])
++  conns.value = c
++  peers.value = p
++  groups.value = g
++  loading.value = false
++}
++onMounted(load)
++
++const peerMap = computed(() => Object.fromEntries(peers.value.map(p => [p.id, p])))
++const groupMap = computed(() => Object.fromEntries(groups.value.map(g => [g.id, g.name])))
++const peerName = (id) => {
++  const p = peerMap.value[id]
++  return p ? (p.alias || p.hostname || id) : id
++}
++const storeOf = (id) => groupMap.value[peerMap.value[id]?.group_id] || 'Sem loja definida'
++
++const since = computed(() => {
++  const d = new Date()
++  d.setHours(0, 0, 0, 0)
++  return d.getTime() - (days.value - 1) * 86400000
++})
++const sessions = computed(() => conns.value
++  .filter(c => c.peer_id)
++  .map(c => {
++    const start = parseTime(c.created_at)
++    const end = c.close_time ? c.close_time * 1000 : 0
++    return { ...c, start, minutes: end > start ? (end - start) / 60000 : 0 }
++  })
++  .filter(c => c.start >= since.value))
++
++const top = (map, n = 6) => Object.entries(map)
++  .map(([name, v]) => ({ name, value: Math.round(v.value ?? v), sub: v.sub }))
++  .filter(x => x.value > 0)
++  .sort((a, b) => b.value - a.value)
++  .slice(0, n)
++
++const countBy = (fn) => {
++  const m = {}
++  sessions.value.forEach(s => { const k = fn(s); m[k] = (m[k] || 0) + 1 })
++  return m
++}
++const byStore = computed(() => top(countBy(s => storeOf(s.peer_id))))
++const byPeer = computed(() => {
++  const m = {}
++  sessions.value.forEach(s => {
++    const k = peerName(s.peer_id)
++    m[k] = m[k] || { value: 0, sub: storeOf(s.peer_id) }
++    m[k].value++
++  })
++  return top(m)
++})
++const byTech = computed(() => top(countBy(s => s.from_name || s.from_peer || 'Desconhecido')))
++const timeByStore = computed(() => {
++  const m = {}
++  sessions.value.forEach(s => { const k = storeOf(s.peer_id); m[k] = (m[k] || 0) + s.minutes })
++  return top(m)
++})
++
++const perDay = computed(() => {
++  const list = []
++  for (let i = 0; i < days.value; i++) {
++    const d = new Date(since.value + i * 86400000)
++    list.push({
++      key: d.toDateString(),
++      short: days.value > 31 ? (d.getDate() === 1 || i === 0 ? `${d.getDate()}/${d.getMonth() + 1}` : '') : `${d.getDate()}/${d.getMonth() + 1}`,
++      label: d.toLocaleDateString('pt-BR'),
++      count: 0,
++    })
++  }
++  const idx = Object.fromEntries(list.map((d, i) => [d.key, i]))
++  sessions.value.forEach(s => {
++    const i = idx[new Date(s.start).toDateString()]
++    if (i !== undefined) list[i].count++
++  })
++  return { list, max: Math.max(0, ...list.map(d => d.count)) }
++})
++
++const kpis = computed(() => {
++  const now = Date.now() / 1000
++  const online = peers.value.filter(p => p.last_online_time && now - p.last_online_time < 300).length
++  const minutes = sessions.value.reduce((a, s) => a + s.minutes, 0)
++  return [
++    { label: 'Computadores cadastrados', value: peers.value.length, icon: 'Monitor', bg: '#E8F1F9', color: '#3F86C0' },
++    { label: 'Online agora', value: online, icon: 'Connection', bg: '#E6F6F3', color: '#17B39B' },
++    { label: 'Acessos no período', value: sessions.value.length, icon: 'Pointer', bg: '#F1ECFB', color: '#8B6FD6' },
++    {
++      label: 'Tempo em atendimento',
++      value: minutes >= 120 ? (minutes / 60).toFixed(1).replace('.', ',') : Math.round(minutes),
++      unit: minutes >= 120 ? 'h' : 'min', icon: 'Timer', bg: '#FCF3E3', color: '#E8A33D',
++    },
++    { label: 'Lojas', value: groups.value.length, icon: 'Shop', bg: '#FDECEF', color: '#D9576F' },
++  ]
++})
++</script>
++
++<style scoped lang="scss">
++.dash { padding: 4px; }
++.dash-head {
++  display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
++  h2 { margin: 0; font-size: 22px; }
++  p { margin: 4px 0 0; color: var(--el-text-color-secondary); }
++}
++.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 16px; }
++.kpi {
++  background: var(--el-bg-color); border: 1px solid var(--el-border-color-lighter); border-radius: 12px;
++  padding: 16px; display: flex; gap: 14px; align-items: center;
++  animation: rise .5s ease both; transition: transform .2s, box-shadow .2s;
++  &:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(36, 55, 70, .08); }
++}
++.kpi-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex: 0 0 46px; }
++.kpi-num { font-size: 26px; font-weight: 700; line-height: 1.1; small { font-size: 14px; font-weight: 500; } }
++.kpi-label { color: var(--el-text-color-secondary); font-size: 13px; margin-top: 2px; }
++.card {
++  background: var(--el-bg-color); border: 1px solid var(--el-border-color-lighter); border-radius: 12px;
++  padding: 16px 18px; margin-bottom: 16px; animation: rise .5s ease both;
++}
++.card-title { font-weight: 600; margin-bottom: 14px; }
++.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; .card { margin-bottom: 0; } }
++.chart { display: flex; align-items: flex-end; gap: 4px; height: 200px; padding-top: 18px; }
++.col {
++  flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; min-width: 0; position: relative;
++  .bar { width: 100%; max-width: 28px; background: linear-gradient(180deg, #62A3D6, #17B39B); border-radius: 5px 5px 0 0; min-height: 2px; transform-origin: bottom; animation: grow .7s cubic-bezier(.2, .8, .2, 1) both; }
++  .val { font-size: 11px; color: var(--el-text-color-secondary); margin-bottom: 2px; }
++  .lbl { font-size: 10px; color: var(--el-text-color-secondary); margin-top: 4px; height: 12px; white-space: nowrap; }
++  &:hover .bar { filter: brightness(1.1); }
++}
++:deep(.rank-row) { display: flex; gap: 12px; align-items: center; padding: 7px 0; }
++:deep(.pos) { width: 24px; height: 24px; border-radius: 50%; background: var(--el-fill-color); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex: 0 0 24px; }
++:deep(.rank-main) { flex: 1; min-width: 0; }
++:deep(.rank-top) { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; margin-bottom: 5px; .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } b { white-space: nowrap; } }
++:deep(.track) { height: 8px; background: var(--el-fill-color-light); border-radius: 4px; overflow: hidden; }
++:deep(.fill) { height: 100%; border-radius: 4px; transform-origin: left; animation: growx .8s cubic-bezier(.2, .8, .2, 1) both; }
++:deep(.empty) { color: var(--el-text-color-secondary); padding: 20px 0; text-align: center; }
++@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
++@keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
++@keyframes growx { from { transform: scaleX(0); } to { transform: scaleX(1); } }
++</style>

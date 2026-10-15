@@ -15,8 +15,370 @@ index 9fe6c1d..f43c51e 100644
    </head>
    <body>
      <div id="app"></div>
+diff --git a/src/layout/components/aside.vue b/src/layout/components/aside.vue
+index 4d43983..363ba91 100644
+--- a/src/layout/components/aside.vue
++++ b/src/layout/components/aside.vue
+@@ -1,20 +1,52 @@
+ <template>
+-  <el-scrollbar class="scroll-sidebar" height="100vh">
+-    <menus></menus>
+-  </el-scrollbar>
++  <div class="aside">
++    <div class="brand" :class="{ mini: collapsed }">
++      <img :src="logo" alt="" class="brand-logo"/>
++      <div v-if="!collapsed" class="brand-text">
++        <b>ExpressChat</b>
++        <small>Remoto</small>
++      </div>
++    </div>
++    <el-scrollbar class="scroll-sidebar">
++      <menus></menus>
++    </el-scrollbar>
++    <a v-if="!collapsed" class="aside-download" href="https://remoto.link-br.site" target="_blank">
++      <el-icon><el-icon-download/></el-icon>
++      <span>Página de download</span>
++    </a>
++  </div>
+ </template>
+-<script>
++<script setup>
+   import Menus from '@/layout/components/menu/index.vue'
+-  import { defineComponent, ref, onMounted } from 'vue'
++  import { computed } from 'vue'
++  import { useAppStore } from '@/store/app'
+ 
+-  export default defineComponent({
+-    name: 'GAside',
+-    components: { Menus },
+-  })
++  const app = useAppStore()
++  const collapsed = computed(() => app.setting.sideIsCollapse)
++  const logo = computed(() => app.setting.logo)
+ </script>
+ 
+ <style scoped lang="scss">
+-.scroll-sidebar {
+-  background-color: #2d3a4b;
++.aside {
++  height: 100vh;
++  display: flex;
++  flex-direction: column;
++  background: linear-gradient(180deg, #1c2a38 0%, #18242f 100%);
++}
++.brand {
++  display: flex; align-items: center; gap: 10px; padding: 18px 18px 14px;
++  &.mini { justify-content: center; padding: 18px 0 14px; }
++  .brand-logo { width: 34px; height: 34px; border-radius: 50%; }
++  .brand-text { display: flex; flex-direction: column; line-height: 1.1; color: #fff;
++    b { font-size: 16px; letter-spacing: .2px; }
++    small { color: #5fe0c9; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; }
++  }
++}
++.scroll-sidebar { flex: 1; }
++.aside-download {
++  display: flex; align-items: center; gap: 8px; margin: 12px; padding: 10px 12px; border-radius: 10px;
++  color: #b9c7d4; text-decoration: none; font-size: 13px; border: 1px dashed rgba(255, 255, 255, .15);
++  transition: color .2s, border-color .2s;
++  &:hover { color: #5fe0c9; border-color: #5fe0c9; }
+ }
+ </style>
+diff --git a/src/layout/components/header.vue b/src/layout/components/header.vue
+index 5579890..b6bb9e0 100644
+--- a/src/layout/components/header.vue
++++ b/src/layout/components/header.vue
+@@ -1,72 +1,54 @@
+ <template>
+-  <el-icon class="ex-icon" @click="expandOrFoldSlider">
+-    <el-icon-expand v-if="setting.sideIsCollapse"></el-icon-expand>
+-    <el-icon-fold v-else></el-icon-fold>
+-  </el-icon>
+-  <div class="header-logo">
+-    <img :src="setting.logo" alt="" class="logo">
+-    <div class="title">{{setting.title}}</div>
++  <div class="hdr">
++    <el-icon class="ex-icon" @click="appStore.sideCollapse()">
++      <el-icon-expand v-if="appStore.setting.sideIsCollapse"></el-icon-expand>
++      <el-icon-fold v-else></el-icon-fold>
++    </el-icon>
++    <h1 class="page-title">{{ pageTitle }}</h1>
++    <el-input v-if="route.name !== 'StoreBoard'" v-model="q" class="quick-search" placeholder="Buscar computador, ID ou loja" clearable @keyup.enter="search">
++      <template #prefix><el-icon><el-icon-search/></el-icon></template>
++    </el-input>
++    <el-button class="dl-btn" :class="{ push: route.name === 'StoreBoard' }" type="primary" icon="ElIconDownload" @click="copyLink">Link para o cliente</el-button>
++    <Setting></Setting>
+   </div>
+-  <Setting></Setting>
+ </template>
+ 
+-<script>
+-  import { defineComponent, computed } from 'vue'
+-  import HeaderMenu from '@/layout/components/menu/index.vue'
++<script setup>
++  import { ref, computed } from 'vue'
++  import { useRoute, useRouter } from 'vue-router'
++  import { ElMessage } from 'element-plus'
+   import Setting from '@/layout/components/setting/index.vue'
+   import { useAppStore } from '@/store/app'
+-  import GTags from '@/layout/components/tags/index.vue'
++  import { T } from '@/utils/i18n'
+ 
+-  export default defineComponent({
+-    name: 'LayerHeader',
+-    created () {
+-    },
+-    components: { HeaderMenu, Setting, GTags },
+-    watch: {},
+-    setup (props) {
+-      const appStore = useAppStore()
+-      const setting = computed(() => appStore.setting)
+-      const expandOrFoldSlider = () => {
+-        appStore.sideCollapse()
+-      }
+-      return {
+-        setting,
+-        expandOrFoldSlider,
+-      }
+-    },
++  const DOWNLOAD_URL = 'https://remoto.link-br.site/baixar'
++  const appStore = useAppStore()
++  const route = useRoute()
++  const router = useRouter()
++  const q = ref('')
++  const pageTitle = computed(() => T(route.meta?.title || '') || '')
+ 
+-  })
+-</script>
+-
+-<style scoped lang="scss">
+-  .ex-icon {
+-    height: 100%;
+-    display: flex;
+-    align-items: center;
+-    margin-right: 10px;
+-    font-size: 16px;
+-    cursor: pointer;
++  const search = () => {
++    router.push({ name: 'StoreBoard', query: q.value.trim() ? { q: q.value.trim() } : {} })
+   }
+ 
+-  .header-logo {
+-    display: flex;
+-    height: 100%;
+-    align-items: center;
+-
+-    .title {
+-      display: block;
+-      margin-left: 10px;
+-    }
+-
+-    .logo {
+-      display: block;
+-      width: 30px;
+-      height: 30px;
++  const copyLink = async () => {
++    const text = `Olá! Para eu te ajudar pelo computador, baixe este programa (é rápido e não precisa instalar):\n${DOWNLOAD_URL}\nDepois é só abrir e me mandar o ID e a senha que aparecem na tela.`
++    try {
++      await navigator.clipboard.writeText(text)
++      ElMessage.success('Mensagem com o link copiada. É só colar no WhatsApp do cliente.')
++    } catch (e) {
++      ElMessage.info(DOWNLOAD_URL)
+     }
+   }
++</script>
+ 
+-
+-</style>
+-<style lang="scss">
+-
++<style scoped lang="scss">
++  .hdr { display: flex; align-items: center; gap: 14px; width: 100%; }
++  .ex-icon { font-size: 18px; cursor: pointer; color: var(--el-text-color-regular); }
++  .page-title { font-size: 18px; font-weight: 700; margin: 0; white-space: nowrap; color: var(--el-text-color-primary); }
++  .quick-search { max-width: 320px; margin-left: auto; :deep(.el-input__wrapper) { border-radius: 10px; } }
++  .dl-btn.push { margin-left: auto; }
++  .dl-btn { border: 0; border-radius: 10px; background: linear-gradient(90deg, #17b39b, #3f86c0); }
++  @media (max-width: 900px) { .quick-search, .page-title { display: none; } }
+ </style>
+diff --git a/src/layout/components/menu/index.vue b/src/layout/components/menu/index.vue
+index 38de891..b381b94 100644
+--- a/src/layout/components/menu/index.vue
++++ b/src/layout/components/menu/index.vue
+@@ -3,54 +3,92 @@
+           class="menus"
+           :collapse="isCollapse"
+           :default-active="activeIndex"
+-          background-color="#2d3a4b"
+-          text-color="#fff"
+-          active-text-color="#409eff"
+           router
+   >
+-    <menu-item v-for="(route,index) in routes" :key="route.name" :route="route"></menu-item>
++    <template v-if="curated">
++      <el-menu-item v-for="item in curatedItems" :key="item.name" :index="item.name" :route="{ name: item.name }">
++        <el-icon><component :is="`el-icon-${item.icon}`"></component></el-icon>
++        <template #title><span>{{ item.title }}</span></template>
++      </el-menu-item>
++    </template>
++    <template v-else>
++      <menu-item v-for="route in routes" :key="route.name" :route="route"></menu-item>
++    </template>
+   </el-menu>
+ </template>
+ 
+ <script>
+-  import { defineComponent, ref, onMounted, watch, computed } from 'vue'
++  import { defineComponent, ref, computed } from 'vue'
+   import { useRouteStore } from '@/store/router'
+   import MenuItem from '@/layout/components/menu/item.vue'
+   import { useRoute } from 'vue-router'
+   import { useAppStore } from '@/store/app'
+ 
++  const CURATED = [
++    { name: 'DashboardIndex', title: 'Início', icon: 'House' },
++    { name: 'StoreBoard', title: 'Lojas e computadores', icon: 'Shop' },
++    { name: 'Peer', title: 'Computadores', icon: 'Monitor' },
++    { name: 'Team', title: 'Equipe', icon: 'UserFilled' },
++    { name: 'History', title: 'Histórico', icon: 'Clock' },
++    { name: 'Settings', title: 'Configurações', icon: 'Setting' },
++  ]
++  const PARENT_OF = {
++    UserList: 'Team', UserAdd: 'Team', UserEdit: 'Team', UserGroup: 'Team',
++    AuditConn: 'History', AuditFile: 'History', LoginLog: 'History',
++  }
++
+   export default defineComponent({
+     name: 'Menu',
+-    created () {
+-    },
+     components: { MenuItem },
+     setup () {
+-      const routes = ref([])
+       const route = useRoute()
+       const app = useAppStore()
++      const routes = ref(useRouteStore().routes)
+       const isCollapse = computed(() => app.setting.sideIsCollapse)
+-      const activeIndex = computed(() => route.name)
+-
+-      routes.value = useRouteStore().routes
+-      return {
+-        routes,
+-        activeIndex,
+-        isCollapse,
+-      }
++      const allNames = computed(() => {
++        const names = []
++        const walk = list => list.forEach(r => { names.push(r.name); r.children && walk(r.children) })
++        walk(routes.value)
++        return names
++      })
++      const curated = computed(() => allNames.value.includes('Settings'))
++      const curatedItems = computed(() => CURATED.filter(i => allNames.value.includes(i.name)))
++      const activeIndex = computed(() => {
++        if (!curated.value) return route.name
++        if (CURATED.some(i => i.name === route.name)) return route.name
++        return PARENT_OF[route.name] || 'Settings'
++      })
++      return { routes, activeIndex, isCollapse, curated, curatedItems }
+     },
+-
+   })
+ </script>
+ 
+ <style lang="scss" scoped>
+   .menus {
+-    min-height: 100vh;
+     border-right: none;
++    background: transparent;
++    --el-menu-bg-color: transparent;
++    --el-menu-hover-bg-color: rgba(255, 255, 255, .06);
++    --el-menu-text-color: #b9c7d4;
++    --el-menu-active-color: #fff;
++    --el-menu-item-height: 46px;
++    padding: 6px 10px;
+     &:not(.el-menu--collapse) {
+       width: var(--sideBarWidth);
+     }
+-
++    &.el-menu--collapse { padding: 6px 4px; }
++    :deep(.el-menu-item), :deep(.el-sub-menu__title) {
++      border-radius: 10px;
++      margin: 2px 0;
++      font-weight: 500;
++      transition: background .2s, color .2s;
++      .el-icon { font-size: 18px; }
++    }
++    :deep(.el-menu-item.is-active) {
++      background: linear-gradient(90deg, #17b39b, #3f86c0);
++      color: #fff;
++      box-shadow: 0 6px 16px rgba(23, 179, 155, .25);
++    }
++    :deep(.el-sub-menu .el-menu) { background: transparent; }
+   }
+ </style>
+-<style>
+-</style>
+diff --git a/src/layout/components/setting/index.vue b/src/layout/components/setting/index.vue
+index 8b24479..cc061e2 100644
+--- a/src/layout/components/setting/index.vue
++++ b/src/layout/components/setting/index.vue
+@@ -98,7 +98,8 @@
+   }
+ 
+   .title {
+-    color: #fff;
++    color: var(--el-text-color-primary);
++    cursor: pointer;
+     display: flex;
+     align-items: center;
+     justify-content: space-around;
+diff --git a/src/layout/index.vue b/src/layout/index.vue
+index d5ab9d4..09e9c1b 100644
+--- a/src/layout/index.vue
++++ b/src/layout/index.vue
+@@ -8,9 +8,6 @@
+         <el-header class="app-header">
+           <g-header></g-header>
+         </el-header>
+-        <div class="header-tags">
+-          <tags></tags>
+-        </div>
+ 
+         <el-main class="app-main">
+           <router-view v-slot="{ Component }">
+@@ -37,7 +34,7 @@
+   const appStore = useAppStore()
+   const tagStore = useTagsStore()
+   const sideBarWidth = computed(() => appStore.setting.locale.sideBarWidth)
+-  const leftWidth = computed(() => appStore.setting.sideIsCollapse ? '64px' : 'var(--sideBarWidth)')
++  const leftWidth = computed(() => appStore.setting.sideIsCollapse ? '72px' : 'var(--sideBarWidth)')
+ 
+   const cachedTags = ref([])
+ 
+@@ -46,10 +43,18 @@
+ 
+ <style lang="scss" scoped>
+ .app-header {
+-  background-color: #3f454b;
+-  color: var(--basicWhite);
++  background-color: var(--el-bg-color);
++  border-bottom: 1px solid var(--el-border-color-lighter);
+   display: flex;
+-  height: 50px;
++  align-items: center;
++  height: 64px;
++  position: sticky;
++  top: 0;
++  z-index: 10;
++}
++
++.app-main {
++  background: var(--el-bg-color-page);
+ }
+ 
+ .header-tags {
 diff --git a/src/router/index.js b/src/router/index.js
-index 7a18b97..c0fdb19 100644
+index 7a18b97..5c0ff22 100644
 --- a/src/router/index.js
 +++ b/src/router/index.js
 @@ -32,6 +32,21 @@ const constantRoutes = [
@@ -41,7 +403,7 @@ index 7a18b97..c0fdb19 100644
    // {
    //   path: '/',
    //   name: 'Index',
-@@ -48,6 +63,21 @@ export const asyncRoutes = [
+@@ -48,6 +63,66 @@ export const asyncRoutes = [
    //
    //   ],
    // },
@@ -60,11 +422,56 @@ index 7a18b97..c0fdb19 100644
 +      },
 +    ],
 +  },
++  {
++    path: '/equipe',
++    name: 'TeamWrap',
++    redirect: '/equipe/inicio',
++    meta: { title: 'Equipe', icon: 'UserFilled' },
++    component: () => import('@/layout/index.vue'),
++    children: [
++      {
++        path: 'inicio',
++        name: 'Team',
++        meta: { title: 'Equipe', icon: 'UserFilled' },
++        component: () => import('@/views/equipe/index.vue'),
++      },
++    ],
++  },
++  {
++    path: '/historico',
++    name: 'HistoryWrap',
++    redirect: '/historico/inicio',
++    meta: { title: 'Histórico', icon: 'Clock' },
++    component: () => import('@/layout/index.vue'),
++    children: [
++      {
++        path: 'inicio',
++        name: 'History',
++        meta: { title: 'Histórico', icon: 'Clock' },
++        component: () => import('@/views/historico/index.vue'),
++      },
++    ],
++  },
++  {
++    path: '/configuracoes',
++    name: 'SettingsWrap',
++    redirect: '/configuracoes/inicio',
++    meta: { title: 'Configurações', icon: 'Setting' },
++    component: () => import('@/layout/index.vue'),
++    children: [
++      {
++        path: 'inicio',
++        name: 'Settings',
++        meta: { title: 'Configurações', icon: 'Setting' },
++        component: () => import('@/views/configuracoes/index.vue'),
++      },
++    ],
++  },
    {
      path: '/my',
      name: 'My',
 diff --git a/src/store/app.js b/src/store/app.js
-index 46caaf3..02b7d1e 100644
+index 46caaf3..767c16c 100644
 --- a/src/store/app.js
 +++ b/src/store/app.js
 @@ -7,9 +7,11 @@ import ru from 'element-plus/es/locale/lang/ru'
@@ -75,7 +482,7 @@ index 46caaf3..02b7d1e 100644
  import { admin, app, server } from '@/api/config'
  
  const langs = {
-+  'pt-BR': { name: 'Português', value: ptBr, sideBarWidth: '260px' },
++  'pt-BR': { name: 'Português', value: ptBr, sideBarWidth: '250px' },
    'zh-CN': { name: '中文', value: zhCn, sideBarWidth: '210px' },
    'en': { name: 'English', value: en, sideBarWidth: '230px' },
    'fr': { name: 'Français', value: fr, sideBarWidth: '280px' },
@@ -94,6 +501,37 @@ index 46caaf3..02b7d1e 100644
        hello: '',
        sideIsCollapse: false,
        logo,
+diff --git a/src/styles/style.scss b/src/styles/style.scss
+index 4f766d6..57fd3f5 100644
+--- a/src/styles/style.scss
++++ b/src/styles/style.scss
+@@ -49,3 +49,26 @@ html.dark {
+   --tag-bg-color: #24252b;
+   --basicBlack: #fff;
+ }
++
++/* ExpressChat: visual padrão das telas de lista */
++.el-card.list-query, .el-card.list-body, .el-card.list-page {
++  border-radius: 12px;
++  border-color: var(--el-border-color-lighter);
++  box-shadow: none !important;
++}
++.list-query .el-button:not(.el-button--primary):not(.is-plain) {
++  --el-button-bg-color: var(--el-bg-color);
++  --el-button-border-color: var(--el-border-color);
++  --el-button-text-color: var(--el-text-color-regular);
++  --el-button-hover-bg-color: var(--el-bg-color);
++  --el-button-hover-border-color: #3f86c0;
++  --el-button-hover-text-color: #3f86c0;
++}
++.list-query .el-button--primary, .el-dialog .el-button--primary {
++  --el-button-bg-color: #17b39b;
++  --el-button-border-color: #17b39b;
++  --el-button-hover-bg-color: #129c87;
++  --el-button-hover-border-color: #129c87;
++}
++.el-button { border-radius: 8px; }
++.el-table th.el-table__cell { background: var(--el-fill-color-lighter); }
 diff --git a/src/utils/i18n.js b/src/utils/i18n.js
 index 5c6878b..dc3e558 100644
 --- a/src/utils/i18n.js
@@ -112,7 +550,7 @@ index 5c6878b..dc3e558 100644
    'zh-CN': zhCN,
 diff --git a/src/utils/i18n/pt_BR.json b/src/utils/i18n/pt_BR.json
 new file mode 100644
-index 0000000..150a1ad
+index 0000000..4393a3f
 --- /dev/null
 +++ b/src/utils/i18n/pt_BR.json
 @@ -0,0 +1,592 @@
@@ -702,7 +1140,7 @@ index 0000000..150a1ad
 +    "One": "Início"
 +  },
 +  "Dashboard": {
-+    "One": "Dashboard"
++    "One": "Início"
 +  },
 +  "StoreBoard": {
 +    "One": "Lojas e computadores"
@@ -722,9 +1160,89 @@ index d7d6198..7c6e3ce 100644
    a.target = '_self'
    a.click()
  
+diff --git a/src/views/configuracoes/index.vue b/src/views/configuracoes/index.vue
+new file mode 100644
+index 0000000..03c98b5
+--- /dev/null
++++ b/src/views/configuracoes/index.vue
+@@ -0,0 +1,74 @@
++<template>
++  <div class="page">
++    <section v-for="(sec, si) in sections" :key="sec.title" class="sec" :style="{ animationDelay: si * 80 + 'ms' }">
++      <h3>{{ sec.title }}</h3>
++      <p v-if="sec.desc" class="sec-desc">{{ sec.desc }}</p>
++      <div class="cards">
++        <router-link v-for="c in sec.items" :key="c.name" :to="{ name: c.name }" class="card">
++          <span class="ic" :style="{ background: c.bg, color: c.color }">
++            <el-icon><component :is="`el-icon-${c.icon}`"/></el-icon>
++          </span>
++          <span class="txt">
++            <b>{{ c.title }}</b>
++            <small>{{ c.desc }}</small>
++          </span>
++          <el-icon class="go"><el-icon-arrow-right/></el-icon>
++        </router-link>
++      </div>
++    </section>
++  </div>
++</template>
++
++<script setup>
++const T1 = { bg: '#E6F6F3', color: '#17B39B' }
++const T2 = { bg: '#E8F1F9', color: '#3F86C0' }
++const T3 = { bg: '#F1F3F5', color: '#6B7D8C' }
++const sections = [
++  {
++    title: 'Minha conta',
++    items: [
++      { name: 'MyInfo', title: 'Meus dados e senha', desc: 'Trocar a sua senha de acesso', icon: 'UserFilled', ...T1 },
++      { name: 'MyPeer', title: 'Meus computadores', desc: 'PCs em que você entrou com o seu usuário', icon: 'Monitor', ...T1 },
++    ],
++  },
++  {
++    title: 'Lojas',
++    items: [
++      { name: 'StoreBoard', title: 'Lojas e setores', desc: 'Criar lojas e organizar os computadores', icon: 'Shop', ...T2 },
++      { name: 'DeviceGroup', title: 'Lista de grupos de computadores', desc: 'As mesmas lojas, em formato de tabela', icon: 'Grid', ...T2 },
++    ],
++  },
++  {
++    title: 'Avançado',
++    desc: 'Recursos herdados do RustDesk. No dia a dia você não precisa mexer aqui.',
++    items: [
++      { name: 'UserAddressBook', title: 'Agendas', desc: 'Lista de contatos que aparece dentro do programa', icon: 'Notebook', ...T3 },
++      { name: 'UserAddressBookName', title: 'Nomes de agenda', desc: 'Agendas extras compartilhadas entre usuários', icon: 'Collection', ...T3 },
++      { name: 'UserTag', title: 'Etiquetas', desc: 'Marcadores usados nas agendas do programa', icon: 'CollectionTag', ...T3 },
++      { name: 'ShareRecord', title: 'Compartilhamentos', desc: 'Links de acesso temporário gerados', icon: 'Share', ...T3 },
++      { name: 'UserToken', title: 'Sessões ativas', desc: 'Quem está logado agora; dá para desconectar', icon: 'Key', ...T3 },
++      { name: 'Oauth', title: 'Login com Google/GitHub', desc: 'Entrar no painel com contas externas', icon: 'Link', ...T3 },
++      { name: 'ServerCmd', title: 'Comandos do servidor', desc: 'Ferramentas técnicas do servidor', icon: 'Tools', ...T3 },
++    ],
++  },
++]
++</script>
++
++<style scoped lang="scss">
++.page { max-width: 1100px; }
++.sec { margin-bottom: 26px; animation: rise .45s ease both;
++  h3 { margin: 0 0 4px; font-size: 16px; }
++  .sec-desc { margin: 0 0 10px; color: var(--el-text-color-secondary); font-size: 13px; }
++}
++.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 10px; }
++.card {
++  display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 12px; text-decoration: none;
++  background: var(--el-bg-color); border: 1px solid var(--el-border-color-lighter); color: var(--el-text-color-primary);
++  transition: transform .15s, box-shadow .2s, border-color .2s;
++  &:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(36, 55, 70, .08); border-color: #17b39b; }
++  .ic { width: 42px; height: 42px; border-radius: 11px; display: grid; place-items: center; font-size: 20px; flex: 0 0 42px; }
++  .txt { display: flex; flex-direction: column; min-width: 0; b { font-size: 14px; } small { color: var(--el-text-color-secondary); font-size: 12px; } }
++  .go { margin-left: auto; color: var(--el-text-color-placeholder); }
++}
++@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
++</style>
 diff --git a/src/views/dashboard/index.vue b/src/views/dashboard/index.vue
 new file mode 100644
-index 0000000..ef0b75f
+index 0000000..29be8bb
 --- /dev/null
 +++ b/src/views/dashboard/index.vue
 @@ -0,0 +1,246 @@
@@ -851,7 +1369,7 @@ index 0000000..ef0b75f
 +  const p = peerMap.value[id]
 +  return p ? (p.alias || p.hostname || id) : id
 +}
-+const storeOf = (id) => groupMap.value[peerMap.value[id]?.group_id] || 'Sem loja definida'
++const storeOf = (id) => (groupMap.value[peerMap.value[id]?.group_id] || 'Sem loja definida').split(' / ')[0]
 +
 +const since = computed(() => {
 +  const d = new Date()
@@ -927,7 +1445,7 @@ index 0000000..ef0b75f
 +      value: minutes >= 120 ? (minutes / 60).toFixed(1).replace('.', ',') : Math.round(minutes),
 +      unit: minutes >= 120 ? 'h' : 'min', icon: 'Timer', bg: '#FCF3E3', color: '#E8A33D',
 +    },
-+    { label: 'Lojas', value: groups.value.length, icon: 'Shop', bg: '#FDECEF', color: '#D9576F' },
++    { label: 'Lojas', value: new Set(groups.value.map(g => (g.name || '').split(' / ')[0])).size, icon: 'Shop', bg: '#FDECEF', color: '#D9576F' },
 +  ]
 +})
 +</script>
@@ -976,21 +1494,21 @@ index 0000000..ef0b75f
 +</style>
 diff --git a/src/views/dashboard/lojas.vue b/src/views/dashboard/lojas.vue
 new file mode 100644
-index 0000000..1dcb8b5
+index 0000000..09cf68a
 --- /dev/null
 +++ b/src/views/dashboard/lojas.vue
-@@ -0,0 +1,355 @@
+@@ -0,0 +1,427 @@
 +<template>
 +  <div class="board-page" v-loading="loading">
 +    <div class="board-head">
 +      <div>
-+        <h2>Lojas e computadores</h2>
-+        <p>Arraste os computadores para organizar por loja e setor (caixa, balcão, servidores...).</p>
++        <p class="lead">Arraste os computadores ou use <b>Mover</b> para organizar por loja e setor (caixa, balcão, servidores...).</p>
 +      </div>
 +      <div class="head-actions">
 +        <el-input v-model="search" placeholder="Buscar computador, ID ou loja" clearable class="search">
 +          <template #prefix><el-icon><el-icon-search/></el-icon></template>
 +        </el-input>
++        <el-switch v-model="onlyOnline" active-text="Só online" class="only-online"/>
 +        <el-button icon="ElIconRefresh" @click="load">Atualizar</el-button>
 +        <el-button type="primary" icon="ElIconShop" @click="openStore()">Nova loja</el-button>
 +      </div>
@@ -1000,6 +1518,7 @@ index 0000000..1dcb8b5
 +      <span><b>{{ stores.length }}</b> lojas</span>
 +      <span><b>{{ peers.length }}</b> computadores</span>
 +      <span class="on"><i></i><b>{{ onlineCount }}</b> online agora</span>
++      <span class="legend"><i class="lg on"></i>Online <i class="lg recent"></i>Visto há pouco <i class="lg off"></i>Offline</span>
 +      <span v-if="unassigned.length" class="warn"><b>{{ unassigned.length }}</b> sem loja</span>
 +    </div>
 +
@@ -1015,12 +1534,12 @@ index 0000000..1dcb8b5
 +        <div class="section">
 +          <div class="cards">
 +            <pc-card v-for="p in filter(unassigned)" :key="p.row_id" :peer="p"
-+                     @dragstart="dragged = p" @connect="connect" @rename="rename"/>
++                     @dragstart="dragged = p" @connect="connect" @rename="rename" @copy="copyId" @move="openMove"/>
 +          </div>
 +        </div>
 +      </div>
 +
-+      <div v-for="(store, si) in visibleStores" :key="store.name" class="column" :style="{ animationDelay: si * 60 + 'ms' }">
++      <div v-for="(store, si) in visibleStores" :key="store.name" class="column" :style="{ animationDelay: si * 60 + 'ms', '--store': storeColor(store.name) }">
 +        <div class="col-head">
 +          <div>
 +            <h3>{{ store.name }}</h3>
@@ -1046,7 +1565,7 @@ index 0000000..1dcb8b5
 +          </div>
 +          <div class="cards">
 +            <pc-card v-for="p in filter(sec.peers)" :key="p.row_id" :peer="p"
-+                     @dragstart="dragged = p" @connect="connect" @rename="rename"/>
++                     @dragstart="dragged = p" @connect="connect" @rename="rename" @copy="copyId" @move="openMove"/>
 +            <div v-if="!sec.peers.length" class="drop-hint">Arraste computadores para cá</div>
 +          </div>
 +        </div>
@@ -1063,6 +1582,19 @@ index 0000000..1dcb8b5
 +        <el-button type="primary" icon="ElIconShop" @click="openStore()">Criar loja</el-button>
 +      </div>
 +    </div>
++
++    <el-dialog v-model="mv.visible" title="Mover computador" width="420px">
++      <p class="mv-name">{{ mv.peer && (mv.peer.alias || mv.peer.hostname || mv.peer.id) }}</p>
++      <el-select v-model="mv.target" placeholder="Escolha a loja e o setor" filterable style="width: 100%">
++        <el-option-group v-for="st in stores" :key="st.name" :label="st.name">
++          <el-option v-for="sec in st.sections" :key="sec.group.id" :label="st.name + ' › ' + sec.label" :value="sec.group.id"/>
++        </el-option-group>
++      </el-select>
++      <template #footer>
++        <el-button @click="mv.visible = false">Cancelar</el-button>
++        <el-button type="primary" :disabled="!mv.target" @click="confirmMove">Mover</el-button>
++      </template>
++    </el-dialog>
 +
 +    <el-dialog v-model="dlg.visible" :title="dlg.title" width="420px">
 +      <el-form label-position="top" @submit.prevent="saveDialog">
@@ -1088,7 +1620,8 @@ index 0000000..1dcb8b5
 +</template>
 +
 +<script setup>
-+import { ref, reactive, computed, onMounted, h } from 'vue'
++import { ref, reactive, computed, onMounted, h, watch } from 'vue'
++import { useRoute } from 'vue-router'
 +import { ElMessage, ElMessageBox } from 'element-plus'
 +import { list as peerList, update as peerUpdate } from '@/api/peer'
 +import { list as groupList, create as groupCreate, update as groupUpdate } from '@/api/device_group'
@@ -1099,36 +1632,63 @@ index 0000000..1dcb8b5
 +const defaultSectors = ['Caixa', 'Balcão', 'Gerência', 'Servidores']
 +
 +const isOnline = (p) => p.last_online_time && (Date.now() / 1000 - p.last_online_time) < 60
++const statusOf = (p) => {
++  if (!p.last_online_time) return 'off'
++  const ago = Date.now() / 1000 - p.last_online_time
++  return ago < 60 ? 'on' : ago < 3600 ? 'recent' : 'off'
++}
++const STORE_COLORS = ['#17B39B', '#3F86C0', '#8B6FD6', '#E8A33D', '#D9576F', '#2BA7C8', '#6CA83A', '#C46BB0']
++const storeColor = (name) => {
++  let h = 0
++  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0
++  return STORE_COLORS[h % STORE_COLORS.length]
++}
++
++const ICON = {
++  connect: 'M3 5h18v11H3z M8 20h8 M12 16v4',
++  copy: 'M9 9h11v11H9z M5 15V4h11',
++  edit: 'M4 20h4L19 9l-4-4L4 16z',
++  move: 'M5 12h14 M13 6l6 6-6 6',
++}
++const svg = (d) => h('svg', { viewBox: '0 0 24 24', class: 'bi' }, d.split(' M').map((seg, i) => h('path', { d: (i ? 'M' : '') + seg })))
++const btn = (cls, label, icon, onClick) => h('button', { class: ['pc-btn', cls], title: label, onClick }, [svg(ICON[icon]), h('span', null, label)])
++const STATUS_TXT = { on: 'Online agora', recent: 'Visto há pouco', off: 'Offline' }
 +
 +const PcCard = (props, { emit }) => {
 +  const p = props.peer
-+  const on = isOnline(p)
++  const st = statusOf(p)
 +  return h('div', {
-+    class: ['pc', { online: on }],
++    class: ['pc', 'st-' + st],
 +    draggable: 'true',
 +    onDragstart: (e) => { e.dataTransfer.effectAllowed = 'move'; emit('dragstart') },
 +  }, [
 +    h('div', { class: 'pc-top' }, [
-+      h('span', { class: 'st', title: on ? 'Online' : 'Offline' }),
++      h('span', { class: 'st' }),
 +      h('b', { class: 'pc-name', title: p.hostname || '' }, p.alias || p.hostname || p.id),
++      h('span', { class: 'pc-badge' }, STATUS_TXT[st]),
 +    ]),
 +    h('div', { class: 'pc-meta' }, [
 +      h('span', null, 'ID ' + p.id),
-+      h('span', null, on ? 'Online agora' : (p.last_online_time ? timeAgo(p.last_online_time * 1000) : 'Nunca conectou')),
++      h('span', null, st === 'on' ? (p.os || '').split(' ')[0] : (p.last_online_time ? timeAgo(p.last_online_time * 1000) : 'Nunca conectou')),
 +    ]),
 +    h('div', { class: 'pc-actions' }, [
-+      h('button', { class: 'pc-btn primary', onClick: () => emit('connect', p) }, 'Conectar'),
-+      h('button', { class: 'pc-btn', onClick: () => emit('rename', p) }, 'Apelido'),
++      btn('primary', 'Conectar', 'connect', () => emit('connect', p)),
++      btn('', 'ID', 'copy', () => emit('copy', p)),
++      btn('', 'Apelido', 'edit', () => emit('rename', p)),
++      btn('', 'Mover', 'move', () => emit('move', p)),
 +    ]),
 +  ])
 +}
 +PcCard.props = ['peer']
-+PcCard.emits = ['dragstart', 'connect', 'rename']
++PcCard.emits = ['dragstart', 'connect', 'rename', 'copy', 'move']
 +
 +const loading = ref(false)
 +const peers = ref([])
 +const groups = ref([])
-+const search = ref('')
++const route = useRoute()
++const search = ref(route.query.q || '')
++watch(() => route.query.q, v => { search.value = v || '' })
++const onlyOnline = ref(false)
 +const dragged = ref(null)
 +const overId = ref(null)
 +
@@ -1180,10 +1740,10 @@ index 0000000..1dcb8b5
 +const onlineCount = computed(() => peers.value.filter(isOnline).length)
 +
 +const q = computed(() => search.value.trim().toLowerCase())
-+const match = (p) => !q.value || [p.alias, p.hostname, p.id].some(v => (v || '').toLowerCase().includes(q.value))
++const match = (p) => (!onlyOnline.value || statusOf(p) === 'on') && (!q.value || [p.alias, p.hostname, p.id].some(v => (v || '').toLowerCase().includes(q.value)))
 +const filter = (list) => list.filter(match)
-+const visibleStores = computed(() => !q.value ? stores.value : stores.value.filter(s =>
-+  s.name.toLowerCase().includes(q.value) || s.sections.some(sec => sec.peers.some(match))))
++const visibleStores = computed(() => (!q.value && !onlyOnline.value) ? stores.value : stores.value.filter(s =>
++  (!onlyOnline.value && s.name.toLowerCase().includes(q.value)) || s.sections.some(sec => sec.peers.some(match))))
 +
 +const drop = async (group) => {
 +  overId.value = null
@@ -1201,6 +1761,19 @@ index 0000000..1dcb8b5
 +}
 +
 +const connect = (p) => connectByClient(p.id)
++
++const copyId = async (p) => {
++  try { await navigator.clipboard.writeText(p.id); ElMessage.success('ID ' + p.id + ' copiado') } catch (e) { ElMessage.info('ID: ' + p.id) }
++}
++
++const mv = reactive({ visible: false, peer: null, target: null })
++const openMove = (p) => Object.assign(mv, { visible: true, peer: p, target: groupIds.value.has(p.group_id) ? p.group_id : null })
++const confirmMove = async () => {
++  const g = groups.value.find(x => x.id === mv.target)
++  dragged.value = mv.peer
++  mv.visible = false
++  if (g) await drop(g)
++}
 +
 +const rename = async (p) => {
 +  const r = await ElMessageBox.prompt('Nome que aparece no painel (ex.: Caixa 1)', 'Apelido do computador', {
@@ -1263,6 +1836,13 @@ index 0000000..1dcb8b5
 +
 +<style scoped lang="scss">
 +.board-page { padding: 4px; }
++.lead { margin: 0; color: var(--el-text-color-secondary); }
++.only-online { margin-right: 4px; --el-switch-on-color: #17b39b; }
++.mv-name { font-weight: 600; margin: 0 0 10px; }
++.legend { display: inline-flex; align-items: center; gap: 6px; margin-left: auto;
++  .lg { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-left: 8px; }
++  .lg.on { background: #17b39b; } .lg.recent { background: #e8a33d; } .lg.off { background: #b8c4ce; }
++}
 +.board-head {
 +  display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 12px;
 +  h2 { margin: 0; font-size: 22px; }
@@ -1279,9 +1859,11 @@ index 0000000..1dcb8b5
 +.column {
 +  flex: 0 0 300px; background: var(--el-fill-color-light); border: 1px solid var(--el-border-color-lighter);
 +  border-radius: 14px; padding: 12px; animation: rise .45s ease both;
++  border-top: 4px solid var(--store, #17b39b);
 +  &.inbox { background: #fdf6ec; border-color: #f5dab1; }
 +}
 +.col-head {
++  h3 { color: var(--store, inherit); }
 +  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 2px 4px 10px;
 +  h3 { margin: 0; font-size: 16px; }
 +  small { color: var(--el-text-color-secondary); }
@@ -1307,20 +1889,28 @@ index 0000000..1dcb8b5
 +  &:hover { color: #17b39b; border-color: #17b39b; background: #f3fbf9; }
 +}
 +:deep(.pc) {
-+  background: var(--el-bg-color); border: 1px solid var(--el-border-color-lighter); border-left: 3px solid #c0ccd6;
-+  border-radius: 10px; padding: 9px 10px; cursor: grab; transition: transform .15s, box-shadow .15s;
-+  &:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(36, 55, 70, .1); }
++  background: var(--el-bg-color); border: 1px solid var(--el-border-color-lighter); border-left: 4px solid #b8c4ce;
++  border-radius: 12px; padding: 10px 11px; cursor: grab; transition: transform .15s, box-shadow .2s;
++  &:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(36, 55, 70, .12); }
 +  &:active { cursor: grabbing; }
-+  &.online { border-left-color: #17b39b; }
++  &.st-on { border-left-color: #17b39b; background: linear-gradient(90deg, rgba(23, 179, 155, .07), transparent 60%), var(--el-bg-color); }
++  &.st-recent { border-left-color: #e8a33d; }
 +  .pc-top { display: flex; align-items: center; gap: 8px; }
-+  .st { width: 8px; height: 8px; border-radius: 50%; background: #c0ccd6; flex: 0 0 8px; }
-+  &.online .st { background: #17b39b; box-shadow: 0 0 0 3px rgba(23, 179, 155, .2); }
-+  .pc-name { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-+  .pc-meta { display: flex; justify-content: space-between; gap: 6px; font-size: 12px; color: var(--el-text-color-secondary); margin: 4px 0 8px 16px; }
-+  .pc-actions { display: flex; gap: 6px; margin-left: 16px; }
++  .st { width: 9px; height: 9px; border-radius: 50%; background: #b8c4ce; flex: 0 0 9px; }
++  &.st-on .st { background: #17b39b; animation: pulse 1.8s infinite; }
++  &.st-recent .st { background: #e8a33d; }
++  .pc-name { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
++  .pc-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #eef2f5; color: #6b7d8c; white-space: nowrap; }
++  &.st-on .pc-badge { background: #e6f6f3; color: #0e7f6e; }
++  &.st-recent .pc-badge { background: #fcf3e3; color: #a86d12; }
++  .pc-meta { display: flex; justify-content: space-between; gap: 6px; font-size: 12px; color: var(--el-text-color-secondary); margin: 5px 0 9px 17px; }
++  .pc-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-left: 17px; }
 +  .pc-btn {
-+    font: inherit; font-size: 12px; font-weight: 600; border-radius: 7px; padding: 4px 10px; cursor: pointer;
++    display: inline-flex; align-items: center; gap: 4px;
++    font: inherit; font-size: 12px; font-weight: 600; border-radius: 7px; padding: 4px 8px; cursor: pointer;
 +    border: 1px solid var(--el-border-color); background: var(--el-bg-color); color: var(--el-text-color-regular);
++    transition: border-color .15s, color .15s, background .15s;
++    .bi { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 +    &:hover { border-color: #3f86c0; color: #3f86c0; }
 +    &.primary { background: #17b39b; border-color: #17b39b; color: #fff; &:hover { background: #129c87; color: #fff; } }
 +  }
@@ -1335,6 +1925,81 @@ index 0000000..1dcb8b5
 +@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 +@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(23, 179, 155, .5); } 70% { box-shadow: 0 0 0 8px rgba(23, 179, 155, 0); } 100% { box-shadow: 0 0 0 0 rgba(23, 179, 155, 0); } }
 +</style>
+diff --git a/src/views/equipe/index.vue b/src/views/equipe/index.vue
+new file mode 100644
+index 0000000..816f966
+--- /dev/null
++++ b/src/views/equipe/index.vue
+@@ -0,0 +1,26 @@
++<template>
++  <div class="page">
++    <p class="intro">Cadastre quem da sua equipe pode entrar no painel e no programa. Cada técnico usa o próprio usuário e senha.</p>
++    <el-tabs v-model="tab" class="page-tabs">
++      <el-tab-pane label="Usuários" name="users" lazy>
++        <users/>
++      </el-tab-pane>
++      <el-tab-pane label="Grupos de usuários" name="groups" lazy>
++        <el-alert type="info" :closable="false" show-icon class="hint"
++                  title="Grupos servem para separar a equipe. Em um grupo compartilhado, todos os membros veem os computadores uns dos outros; no grupo comum, só o administrador vê."/>
++        <groups/>
++      </el-tab-pane>
++    </el-tabs>
++  </div>
++</template>
++
++<script setup>
++import { ref, defineAsyncComponent } from 'vue'
++const Users = defineAsyncComponent(() => import('@/views/user/index.vue'))
++const Groups = defineAsyncComponent(() => import('@/views/group/index.vue'))
++const tab = ref('users')
++</script>
++
++<style scoped lang="scss">
++@import '../historico/page.scss';
++</style>
+diff --git a/src/views/historico/index.vue b/src/views/historico/index.vue
+new file mode 100644
+index 0000000..707f89d
+--- /dev/null
++++ b/src/views/historico/index.vue
+@@ -0,0 +1,22 @@
++<template>
++  <div class="page">
++    <p class="intro">Tudo o que aconteceu: quem conectou em qual computador, arquivos enviados e logins no painel.</p>
++    <el-tabs v-model="tab" class="page-tabs">
++      <el-tab-pane label="Conexões" name="conn" lazy><conn/></el-tab-pane>
++      <el-tab-pane label="Arquivos" name="files" lazy><files/></el-tab-pane>
++      <el-tab-pane label="Logins no painel" name="logins" lazy><logins/></el-tab-pane>
++    </el-tabs>
++  </div>
++</template>
++
++<script setup>
++import { ref, defineAsyncComponent } from 'vue'
++const Conn = defineAsyncComponent(() => import('@/views/audit/connList.vue'))
++const Files = defineAsyncComponent(() => import('@/views/audit/fileList.vue'))
++const Logins = defineAsyncComponent(() => import('@/views/login/log.vue'))
++const tab = ref('conn')
++</script>
++
++<style scoped lang="scss">
++@import './page.scss';
++</style>
+diff --git a/src/views/historico/page.scss b/src/views/historico/page.scss
+new file mode 100644
+index 0000000..c614c48
+--- /dev/null
++++ b/src/views/historico/page.scss
+@@ -0,0 +1,9 @@
++.page { padding: 2px; }
++.intro { margin: 0 0 12px; color: var(--el-text-color-secondary); }
++.hint { margin-bottom: 12px; }
++.page-tabs {
++  :deep(.el-tabs__header) { margin-bottom: 14px; }
++  :deep(.el-tabs__item) { font-size: 15px; font-weight: 600; height: 44px; }
++  :deep(.el-tabs__active-bar) { background: linear-gradient(90deg, #17b39b, #3f86c0); height: 3px; border-radius: 3px; }
++  :deep(.el-tabs__item.is-active) { color: #17b39b; }
++}
 diff --git a/src/views/login/login.vue b/src/views/login/login.vue
 index f4b104f..1895337 100644
 --- a/src/views/login/login.vue
@@ -1548,7 +2213,7 @@ index f4b104f..1895337 100644
  </style>
 \ No newline at end of file
 diff --git a/src/views/peer/index.vue b/src/views/peer/index.vue
-index fd232ac..5bc3920 100644
+index fd232ac..2796500 100644
 --- a/src/views/peer/index.vue
 +++ b/src/views/peer/index.vue
 @@ -1,14 +1,14 @@
@@ -1633,7 +2298,7 @@ index fd232ac..5bc3920 100644
              <template #default="{row}">
                <span v-if="row.group_id"> <el-tag>{{ groupListRes.list?.find(g => g.id === row.group_id)?.name }} </el-tag> </span>
                <span v-else> - </span>
-@@ -100,13 +105,15 @@
+@@ -100,13 +105,14 @@
            <el-table-column v-if="c.name==='updated_at'" prop="updated_at" :label="T('UpdatedAt')" align="center" width="150"/>
          </template>
  
@@ -1647,15 +2312,14 @@ index fd232ac..5bc3920 100644
 -            <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>
 +            <div class="row-actions">
 +              <el-button type="primary" size="small" icon="ElIconMonitor" @click="connectByClient(row.id)">Conectar</el-button>
-+              <el-button v-if="appStore.setting.appConfig.web_client" size="small" icon="ElIconCompass" @click="toWebClientLink(row)">Navegador</el-button>
-+              <el-button size="small" icon="ElIconNotebook" @click="toAddressBook(row)">Agenda</el-button>
++                            <el-button size="small" icon="ElIconNotebook" @click="toAddressBook(row)">Agenda</el-button>
 +              <el-button size="small" icon="ElIconEdit" @click="toEdit(row)">{{ T('Edit') }}</el-button>
 +              <el-button size="small" type="danger" text icon="ElIconDelete" @click="del(row)">{{ T('Delete') }}</el-button>
 +            </div>
            </template>
          </el-table-column>
        </el-table>
-@@ -527,27 +534,27 @@
+@@ -527,27 +533,27 @@
  
    const columnSettingVisible = ref(false)
    const allColumns = ref([
@@ -1696,7 +2360,7 @@ index fd232ac..5bc3920 100644
      ElMessage.success(T('OperationSuccess'))
      columnSettingVisible.value = false
    }
-@@ -573,6 +580,13 @@
+@@ -573,6 +579,13 @@
    --el-select-width: 180px;
  }
  
@@ -1710,7 +2374,7 @@ index fd232ac..5bc3920 100644
  .last_oline_time {
    display: flex;
    justify-content: center;
-@@ -586,12 +600,16 @@
+@@ -586,12 +599,16 @@
    border-radius: 50%;
    margin-left: 10px;
  

@@ -174,6 +174,10 @@ lazy_static::lazy_static! {
 }
 
 const PUBLIC_SERVER: &str = "public";
+// A custom client replaces RENDEZVOUS_SERVERS/RS_PUB_KEY with its own server, so "ID@public"
+// still needs the stock RustDesk public server to reach peers running the stock client.
+const STOCK_PUBLIC_SERVER: &str = "rs-ny.rustdesk.com";
+const STOCK_PUBLIC_KEY: &str = "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=";
 
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 pub fn get_key_state(key: enigo::Key) -> bool {
@@ -469,7 +473,13 @@ impl Client {
         let (rendezvous_server, servers, contained) = if other_server.is_empty() {
             crate::get_rendezvous_server(1_000).await
         } else {
-            if other_server == PUBLIC_SERVER {
+            if other_server == PUBLIC_SERVER && crate::is_custom_client() {
+                (
+                    check_port(STOCK_PUBLIC_SERVER, RENDEZVOUS_PORT),
+                    Vec::new(),
+                    true,
+                )
+            } else if other_server == PUBLIC_SERVER {
                 (
                     check_port(RENDEZVOUS_SERVERS[0], RENDEZVOUS_PORT),
                     RENDEZVOUS_SERVERS[1..]
@@ -2916,7 +2926,9 @@ impl LoginConfigHandler {
             let mut server_key = v.next().unwrap_or_default().split('?');
             let server = server_key.next().unwrap_or_default();
             let args = server_key.next().unwrap_or_default();
-            let key = if server == PUBLIC_SERVER {
+            let key = if server == PUBLIC_SERVER && crate::is_custom_client() {
+                STOCK_PUBLIC_KEY.to_owned()
+            } else if server == PUBLIC_SERVER {
                 config::RS_PUB_KEY.to_owned()
             } else {
                 let mut args_map: HashMap<String, &str> = HashMap::new();

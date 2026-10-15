@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ExpressChat Remoto · Suporte remoto para a sua loja</title>
+<meta name="description" content="Baixe o ExpressChat Remoto e receba suporte da equipe ExpressChat em segundos, sem instalar nada.">
+<link rel="icon" href="favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#1c2a38;--ink:#243746;--muted:#5f7180;--line:#e3e9ef;--bg:#f5f8fb;
+  --teal:#17b39b;--blue:#3f86c0;--sky:#62a3d6;--white:#fff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:"Plus Jakarta Sans",system-ui,sans-serif;color:var(--ink);background:var(--white);line-height:1.5;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+
+/* topo */
+.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border-bottom:1px solid transparent;transition:border-color .3s,box-shadow .3s}
+.top.scrolled{border-color:var(--line);box-shadow:0 6px 24px rgba(28,42,56,.06)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:74px;gap:20px}
+.brand img{height:40px;width:auto}
+.nav{display:flex;gap:28px;font-weight:600;font-size:15px;color:var(--muted)}
+.nav a{position:relative;padding:6px 0}
+.nav a::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--teal);transition:width .25s}
+.nav a:hover{color:var(--ink)}.nav a:hover::after{width:100%}
+.top-actions{display:flex;gap:10px}
+
+.btn{display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:16px;border-radius:12px;padding:14px 22px;border:2px solid transparent;cursor:pointer;transition:transform .15s,box-shadow .25s,background-position .4s,border-color .2s,background-color .2s}
+.btn:hover{transform:translateY(-2px)}
+.btn-main{color:#fff;background:linear-gradient(90deg,var(--teal),var(--blue));background-size:200% 100%;box-shadow:0 10px 26px rgba(23,179,155,.28)}
+.btn-main:hover{background-position:100% 0;box-shadow:0 14px 32px rgba(63,134,192,.32)}
+.btn-ghost{border-color:var(--ink);color:var(--ink);background:#fff}
+.btn-ghost:hover{background:var(--ink);color:#fff}
+.btn-sm{padding:10px 16px;font-size:14px;border-radius:10px}
+
+/* hero */
+.hero{position:relative;padding:72px 0 96px;overflow:hidden;background:radial-gradient(1200px 500px at 90% -10%,#e7f6f3 0,transparent 60%),radial-gradient(900px 500px at -10% 110%,#e8f1f9 0,transparent 60%)}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13px;letter-spacing:1.4px;text-transform:uppercase;color:#0e7f6e;background:#e6f6f3;border:1px solid #bfe9e1;padding:7px 14px;border-radius:999px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 0 rgba(23,179,155,.6);animation:pulse 1.8s infinite}
+h1{font-size:clamp(36px,5vw,58px);line-height:1.05;letter-spacing:-1.5px;font-weight:800;color:var(--navy);margin:20px 0 18px}
+h1 .grad{background:linear-gradient(90deg,var(--teal),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:19px;color:var(--muted);max-width:540px}
+.cta{display:flex;flex-wrap:wrap;gap:14px;margin:32px 0 18px}
+.note{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+.note svg{color:var(--teal);width:18px;height:18px}
+
+.stage{position:relative;height:460px}
+.win{position:absolute;left:0;top:30px;width:360px;background:#fff;border-radius:18px;box-shadow:0 30px 60px rgba(28,42,56,.16);border:1px solid var(--line);overflow:hidden;animation:float 6s ease-in-out infinite}
+.win-bar{display:flex;align-items:center;gap:7px;padding:12px 14px;border-bottom:1px solid var(--line);background:#fafcfd}
+.win-bar span{width:10px;height:10px;border-radius:50%;background:#e3e9ef}
+.win-bar b{margin-left:8px;font-size:12px;color:var(--muted);font-weight:600}
+.win-body{padding:20px}
+.win-body small{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px}
+.code{font-size:30px;font-weight:800;letter-spacing:2px;color:var(--navy)}
+.pass{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--bg);font-weight:700;letter-spacing:3px}
+.status{display:flex;align-items:center;gap:8px;margin-top:16px;font-size:13px;font-weight:600;color:#0e7f6e}
+.mascot{position:absolute;right:0;top:0;width:250px;border-radius:24px;overflow:hidden;box-shadow:0 30px 60px rgba(28,42,56,.18);border:4px solid #fff;animation:float 7s ease-in-out infinite;animation-delay:-2s}
+.chip{position:absolute;display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;box-shadow:0 18px 40px rgba(28,42,56,.12);font-weight:700;font-size:14px;animation:float 5s ease-in-out infinite}
+.chip .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center}
+.chip small{display:block;font-size:12px;color:var(--muted);font-weight:500}
+.chip-1{right:40px;bottom:40px;animation-delay:-1s}
+.chip-1 .ic{background:#e6f6f3;color:var(--teal)}
+.chip-2{left:90px;bottom:0;animation-delay:-3s}
+.chip-2 .ic{background:#e8f1f9;color:var(--blue)}
+.bar-anim{width:120px;height:6px;border-radius:3px;background:#e8f1f9;overflow:hidden;margin-top:6px}
+.bar-anim i{display:block;height:100%;width:40%;background:linear-gradient(90deg,var(--teal),var(--blue));border-radius:3px;animation:load 2.4s ease-in-out infinite}
+
+/* faixa de logos */
+.trust{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg)}
+.trust .wrap{display:flex;align-items:center;justify-content:center;gap:48px;flex-wrap:wrap;padding:26px 24px}
+.trust p{font-size:14px;color:var(--muted);font-weight:600}
+.trust .logos{display:flex;align-items:center;gap:40px;flex-wrap:wrap;justify-content:center}
+.trust img{height:38px;width:auto;filter:grayscale(.15);transition:transform .2s}
+.trust a:hover img{transform:scale(1.05)}
+.pl{display:flex;align-items:center;gap:9px;font-weight:800;font-size:25px;letter-spacing:-.6px;color:#1b1b2f}
+.pl svg{width:36px;height:36px}
+.pl em{font-style:normal;background:linear-gradient(90deg,#ff2d55,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* seções */
+section{padding:96px 0}
+.head{text-align:center;max-width:680px;margin:0 auto 52px}
+.head .eyebrow{margin-bottom:14px}
+h2{font-size:clamp(28px,3.6vw,42px);line-height:1.12;letter-spacing:-1px;color:var(--navy);font-weight:800}
+.head p{color:var(--muted);font-size:18px;margin-top:14px}
+
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;counter-reset:s}
+.step{position:relative;background:#fff;border:1px solid var(--line);border-radius:20px;padding:30px 28px;transition:transform .25s,box-shadow .25s}
+.step:hover{transform:translateY(-6px);box-shadow:0 22px 44px rgba(28,42,56,.1)}
+.step .num{position:absolute;top:22px;right:24px;font-size:48px;font-weight:800;color:#eef3f7;line-height:1}
+.step .ic{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#e6f6f3,#e8f1f9);color:var(--blue);margin-bottom:18px}
+.step .ic svg{width:26px;height:26px}
+.step h3{font-size:20px;margin-bottom:8px;color:var(--navy)}
+.step p{color:var(--muted)}
+
+.features{background:var(--navy);color:#fff;position:relative;overflow:hidden}
+.features h2{color:#fff}.features .head p{color:#b9d3e6}
+.features .eyebrow{background:rgba(23,179,155,.16);border-color:rgba(95,224,201,.35);color:#5fe0c9}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.35;animation:drift 16s ease-in-out infinite alternate}
+.blob.a{width:420px;height:420px;background:var(--teal);top:-160px;left:-120px}
+.blob.b{width:380px;height:380px;background:var(--blue);bottom:-160px;right:-80px;animation-delay:-6s}
+.grid{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.feat{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:26px;transition:background .25s,transform .25s}
+.feat:hover{background:rgba(255,255,255,.09);transform:translateY(-4px)}
+.feat .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:rgba(95,224,201,.12);color:#5fe0c9;margin-bottom:16px}
+.feat h3{font-size:18px;margin-bottom:6px}
+.feat p{color:#b9d3e6;font-size:15px}
+
+.download .card{display:grid;grid-template-columns:1.2fr .8fr;gap:40px;align-items:center;background:linear-gradient(135deg,#f3fbf9,#eef5fb);border:1px solid var(--line);border-radius:28px;padding:48px}
+.download h2{margin-bottom:12px}
+.download p{color:var(--muted);font-size:17px}
+.os{display:grid;gap:12px}
+.os-item{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.os-item b{display:flex;align-items:center;gap:12px}
+.os-item .soon{font-size:13px;font-weight:600;color:var(--muted);background:var(--bg);border-radius:999px;padding:5px 12px}
+.os-item .btn{padding:10px 16px;font-size:14px}
+.short{margin-top:22px;display:inline-flex;align-items:center;gap:10px;background:#fff;border:1px dashed #bcd0de;border-radius:12px;padding:10px 14px;font-weight:700;color:var(--navy)}
+.short button{border:0;background:var(--navy);color:#fff;font:inherit;font-size:13px;padding:7px 12px;border-radius:8px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.short button svg{width:16px;height:16px}
+
+footer{background:#121c26;color:#9fb3c4;padding:48px 0 32px;font-size:14px}
+footer .wrap{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;align-items:center}
+footer .f-brand{display:flex;align-items:center;gap:12px;color:#fff;font-weight:700}
+footer .f-brand img{width:38px;height:38px}
+footer nav{display:flex;gap:22px;flex-wrap:wrap}
+footer nav a:hover{color:#fff}
+footer .copy{width:100%;border-top:1px solid rgba(255,255,255,.08);padding-top:20px;margin-top:8px;font-size:13px}
+
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
+.reveal.on{opacity:1;transform:none}
+.d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}
+
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(23,179,155,.55)}70%{box-shadow:0 0 0 10px rgba(23,179,155,0)}100%{box-shadow:0 0 0 0 rgba(23,179,155,0)}}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(50px,40px) scale(1.15)}}
+@keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.hero-text>*{animation:fadeUp .7s ease both}
+.hero-text>*:nth-child(2){animation-delay:.08s}.hero-text>*:nth-child(3){animation-delay:.16s}
+.hero-text>*:nth-child(4){animation-delay:.24s}.hero-text>*:nth-child(5){animation-delay:.32s}
+
+@media (max-width:980px){
+  .nav{display:none}
+  .hero .wrap,.download .card{grid-template-columns:1fr}
+  .stage{height:420px;max-width:520px;margin:0 auto;width:100%}
+  .steps,.grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:640px){
+  .top-actions .btn-ghost{display:none}
+  .brand img{height:32px}
+  .hero{padding:44px 0 64px}
+  .stage{height:360px}
+  .win{width:270px}.code{font-size:22px}
+  .mascot{width:160px}
+  .chip-2{left:0}
+  .steps,.grid{grid-template-columns:1fr}
+  section{padding:68px 0}
+  .download .card{padding:28px 20px}
+  .cta .btn{width:100%;justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a href="#" class="brand"><img src="logo-expresschat.png" alt="ExpressChat"></a>
+    <nav class="nav">
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#recursos">Recursos</a>
+      <a href="#baixar">Download</a>
+    </nav>
+    <div class="top-actions">
+      <a class="btn btn-ghost btn-sm" href="https://painel-remoto.link-br.site/_admin/">
+        <svg class="i" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>Área da equipe
+      </a>
+      <a class="btn btn-main btn-sm" href="/baixar">
+        <svg class="i" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>Baixar
+      </a>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-text">
+      <span class="eyebrow"><span class="dot"></span>Suporte remoto ExpressChat</span>
+      <h1>Suporte na sua loja <span class="grad">em segundos</span>, sem complicação</h1>
+      <p class="lead">Baixe o ExpressChat Remoto, abra o arquivo e passe o código para o nosso técnico. A gente resolve direto no seu computador.</p>
+      <div class="cta">
+        <a class="btn btn-main" href="/baixar">
+          <svg class="i" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>Baixar para Windows
+        </a>
+        <a class="btn btn-ghost" href="#como-funciona">
+          <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/></svg>Como funciona
+        </a>
+      </div>
+      <p class="note"><svg class="i" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Não precisa instalar · Grátis para clientes ExpressChat</p>
+    </div>
+
+    <div class="stage" aria-hidden="true">
+      <div class="win">
+        <div class="win-bar"><span></span><span></span><span></span><b>ExpressChat Remoto</b></div>
+        <div class="win-body">
+          <small>Seu código de acesso</small>
+          <div class="code">123 456 789</div>
+          <small style="margin-top:14px">Senha</small>
+          <div class="pass">k7x2p9 <svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px;color:#5f7180"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></div>
+          <div class="status"><span class="dot"></span>Pronto para receber suporte</div>
+        </div>
+      </div>
+      <div class="mascot"><img src="mascote.jpg" alt=""></div>
+      <div class="chip chip-1">
+        <span class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
+        <span>Técnico conectado<small>Viva Bem · Caixa 1</small></span>
+      </div>
+      <div class="chip chip-2">
+        <span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></span>
+        <span>Enviando arquivo<span class="bar-anim"><i></i></span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="trust">
+  <div class="wrap">
+    <p>Uma solução do ecossistema</p>
+    <div class="logos">
+      <a href="#"><img src="logo-expresschat.png" alt="ExpressChat"></a>
+      <a href="https://pedidos.link-br.site/" class="pl" aria-label="Pedidos Link">
+        <svg viewBox="0 0 64 64"><defs><linearGradient id="plg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff2d55"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(#plg)"/><path d="M22 48V20h12a9 9 0 0 1 0 18h-6" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M34 31h-4a6 6 0 0 0 0 12h8" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".55"/></svg>
+        <span>pedidos<em>link</em></span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<section id="como-funciona">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Como funciona</span>
+      <h2>Três passos e o técnico já está na sua tela</h2>
+      <p>Funciona em qualquer computador Windows da loja: caixa, balcão ou gerência.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal d1"><span class="num">1</span>
+        <div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg></div>
+        <h3>Baixe o programa</h3><p>Clique em "Baixar para Windows". O arquivo é pequeno e baixa rapidinho.</p></div>
+      <div class="step reveal d2"><span class="num">2</span>
+        <div class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
+        <h3>Abra o arquivo</h3><p>Não precisa instalar. Vai aparecer o seu código de acesso e uma senha.</p></div>
+      <div class="step reveal d3"><span class="num">3</span>
+        <div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9 11h6M9 14h4"/></svg></div>
+        <h3>Passe para o técnico</h3><p>Envie o código e a senha pelo WhatsApp. Pronto: a gente resolve por você.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="recursos">
+  <span class="blob a"></span><span class="blob b"></span>
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Recursos</span>
+      <h2>Tudo o que o suporte precisa, num só programa</h2>
+      <p>Servidor próprio da ExpressChat, com conexão protegida do começo ao fim.</p>
+    </div>
+    <div class="grid">
+      <div class="feat reveal d1"><div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div><h3>Conexão em segundos</h3><p>Sem configurar nada no computador da loja.</p></div>
+      <div class="feat reveal d2"><div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M7 17l-4-4 4-4"/><path d="M17 7l4 4-4 4"/><path d="M3 13h18"/></svg></div><h3>Transferência de arquivos</h3><p>Envie e receba planilhas, notas e instaladores.</p></div>
+      <div class="feat reveal d3"><div class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h3>Acesso protegido</h3><p>Só entra quem tem o código e a senha que você passou.</p></div>
+      <div class="feat reveal d1"><div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg></div><h3>Organizado por loja</h3><p>Cada caixa e balcão fica no grupo da sua loja.</p></div>
+      <div class="feat reveal d2"><div class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="2" y="3" width="9" height="7" rx="1.5"/><rect x="13" y="3" width="9" height="7" rx="1.5"/><rect x="2" y="14" width="9" height="7" rx="1.5"/><rect x="13" y="14" width="9" height="7" rx="1.5"/></svg></div><h3>Várias lojas ao mesmo tempo</h3><p>Nossa equipe atende vários computadores juntos.</p></div>
+      <div class="feat reveal d3"><div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg></div><h3>Histórico de atendimentos</h3><p>Cada acesso fica registrado: quem, quando e por quanto tempo.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="download" id="baixar">
+  <div class="wrap">
+    <div class="card reveal">
+      <div>
+        <span class="eyebrow">Download</span>
+        <h2 style="margin-top:14px">Baixe o ExpressChat Remoto</h2>
+        <p>Guarde este endereço: é por ele que você baixa o programa sempre que precisar.</p>
+        <div class="short">
+          <span id="shortlink">remoto.link-br.site</span>
+          <button type="button" id="copy"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>Copiar</span></button>
+        </div>
+      </div>
+      <div class="os">
+        <div class="os-item"><b><svg class="i" viewBox="0 0 24 24"><path d="M3 5.5l7.5-1v7H3z"/><path d="M12 4.3L21 3v8.5h-9z"/><path d="M3 12.5h7.5v7L3 18.5z"/><path d="M12 12.5h9V21l-9-1.3z"/></svg>Windows</b>
+          <a class="btn btn-main" href="/baixar"><svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>Baixar</a></div>
+        <div class="os-item"><b><svg class="i" viewBox="0 0 24 24"><path d="M16 3c-1.2.1-2.6.9-3.3 2-.7.9-1.1 2.2-.9 3.3 1.3.1 2.6-.7 3.3-1.7.7-1 1.1-2.2.9-3.6z"/><path d="M19.5 17c-.7 1.6-1.9 4-3.6 4-1.4 0-1.8-.9-3.4-.9s-2.1.9-3.4.9C7.4 21 5 17.7 5 14.3 5 10.6 7.4 9 9.2 9c1.4 0 2.5.9 3.3.9.8 0 2.1-1 3.7-.9 1 0 2.7.4 3.7 2-2.8 1.8-2.3 5.4-.4 6z"/></svg>Mac</b><span class="soon">Em breve</span></div>
+        <div class="os-item"><b><svg class="i" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>Android</b><span class="soon">Em breve</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="f-brand"><img src="emblema.png" alt="">ExpressChat Remoto</div>
+    <nav>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#baixar">Download</a>
+      <a href="https://pedidos.link-br.site/">Pedidos Link</a>
+      <a href="https://painel-remoto.link-br.site/_admin/">Área da equipe</a>
+    </nav>
+    <p class="copy">© <span id="ano">2026</span> Expresschat Tecnologia LTDA · CNPJ 67.228.149/0001-01 · Rio de Janeiro/RJ</p>
+  </div>
+</footer>
+
+<script>
+document.getElementById('ano').textContent = new Date().getFullYear();
+const bar = document.getElementById('top');
+addEventListener('scroll', () => bar.classList.toggle('scrolled', scrollY > 10), { passive: true });
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); } }), { threshold: .15 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+document.getElementById('copy').addEventListener('click', async (ev) => {
+  const label = ev.currentTarget.querySelector('span');
+  try { await navigator.clipboard.writeText('https://remoto.link-br.site'); label.textContent = 'Copiado!'; }
+  catch (e) { label.textContent = 'Copie o endereço'; }
+  setTimeout(() => { label.textContent = 'Copiar'; }, 2000);
+});
+</script>
+</body>
+</html>

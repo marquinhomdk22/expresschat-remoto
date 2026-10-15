@@ -936,3 +936,215 @@ index 0000000..ef0b75f
 +@keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 +@keyframes growx { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 +</style>
+diff --git a/src/views/login/login.vue b/src/views/login/login.vue
+index f4b104f..1895337 100644
+--- a/src/views/login/login.vue
++++ b/src/views/login/login.vue
+@@ -1,7 +1,23 @@
+ <template>
+   <div class="login-container">
++    <aside class="login-hero">
++      <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span>
++      <div class="hero-content">
++        <span class="hero-tag">ExpressChat Remoto</span>
++        <h1>Suporte remoto rápido<br>para as lojas dos seus clientes</h1>
++        <p class="hero-sub">Acesse os computadores, envie arquivos e organize tudo por loja, num só painel.</p>
++        <ul class="hero-list">
++          <li><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>Conexão em segundos, sem instalar</li>
++          <li><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>Transferência de arquivos</li>
++          <li><svg viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg>Computadores organizados por loja</li>
++        </ul>
++      </div>
++      <div class="hero-mascot"><img src="@/assets/mascote.jpg" alt=""/></div>
++    </aside>
+     <div class="login-card">
+-      <img src="@/assets/logo.png" alt="logo" class="login-logo"/>
++      <img src="@/assets/logo-full.png" alt="ExpressChat" class="login-logo"/>
++      <h2 class="login-title">Bem-vindo de volta</h2>
++      <p class="login-sub">Entre com seu usuário para acessar o painel</p>
+ 
+       <el-form v-if="!disablePwd" label-position="top" class="login-form">
+         <el-form-item :label="T('Username')">
+@@ -37,6 +53,11 @@
+           </el-button>
+         </div>
+       </div>
++      <a class="login-download" href="https://remoto.link-br.site" target="_blank">
++        <svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>
++        <span>É cliente? <b>Baixe o ExpressChat Remoto</b></span>
++      </a>
++      <p class="login-foot">© {{ new Date().getFullYear() }} ExpressChat Tecnologia</p>
+     </div>
+   </div>
+ </template>
+@@ -171,21 +192,105 @@
+ <style scoped lang="scss">
+ .login-container {
+   display: flex;
+-  justify-content: center;
+-  align-items: center;
+-  height: 100vh;
+-  background-color: #2d3a4b;
+-  padding: 20px;
++  min-height: 100vh;
++  background: #f4f7fa;
+   box-sizing: border-box;
+ }
+ 
++.login-hero {
++  position: relative;
++  flex: 1.15;
++  overflow: hidden;
++  background: #1c2a38;
++  color: #fff;
++  display: flex;
++  flex-direction: column;
++  justify-content: center;
++  padding: 56px 64px;
++  text-align: left;
++}
++
++.blob {
++  position: absolute;
++  border-radius: 50%;
++  filter: blur(60px);
++  opacity: .55;
++  animation: drift 14s ease-in-out infinite alternate;
++}
++.b1 { width: 420px; height: 420px; background: #17b39b; top: -120px; left: -100px; }
++.b2 { width: 360px; height: 360px; background: #3f86c0; bottom: -140px; right: 10%; animation-delay: -5s; }
++.b3 { width: 220px; height: 220px; background: #62a3d6; top: 40%; right: -60px; animation-delay: -9s; opacity: .35; }
++
++.hero-content { position: relative; z-index: 1; max-width: 520px; animation: fadeUp .7s ease both; }
++.hero-tag {
++  display: inline-block;
++  font-size: 13px;
++  font-weight: 700;
++  letter-spacing: 1.5px;
++  text-transform: uppercase;
++  background: rgba(23, 179, 155, .18);
++  color: #5fe0c9;
++  border: 1px solid rgba(95, 224, 201, .35);
++  padding: 6px 12px;
++  border-radius: 999px;
++}
++.login-hero h1 { font-size: 38px; line-height: 1.15; font-weight: 800; margin: 18px 0 12px; letter-spacing: -.5px; }
++.hero-sub { color: #b9d3e6; font-size: 17px; line-height: 1.5; margin: 0 0 26px; }
++.hero-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
++.hero-list li {
++  display: flex; align-items: center; gap: 12px; font-size: 15px; color: #e6eef5;
++  animation: fadeUp .6s ease both;
++}
++.hero-list li:nth-child(1) { animation-delay: .15s; }
++.hero-list li:nth-child(2) { animation-delay: .3s; }
++.hero-list li:nth-child(3) { animation-delay: .45s; }
++.hero-list svg {
++  width: 36px; height: 36px; padding: 8px; box-sizing: border-box; flex: 0 0 36px;
++  border-radius: 10px; background: rgba(255, 255, 255, .08);
++  fill: none; stroke: #5fe0c9; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
++}
++.hero-mascot {
++  position: absolute; z-index: 1; right: 48px; bottom: 48px;
++  width: 190px; border-radius: 22px; overflow: hidden;
++  box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
++  border: 3px solid rgba(255, 255, 255, .12);
++  animation: float 5s ease-in-out infinite;
++}
++.hero-mascot img { display: block; width: 100%; }
++
+ .login-card {
+-  width: 360px;
+-  background-color: #283342;
+-  padding: 40px;
+-  border-radius: 8px;
+-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+-  text-align: center;
++  flex: 1;
++  display: flex;
++  flex-direction: column;
++  justify-content: center;
++  max-width: 520px;
++  margin: 0 auto;
++  padding: 48px 56px;
++  box-sizing: border-box;
++  text-align: left;
++  animation: fadeUp .6s ease both;
++}
++.login-logo { width: 210px; height: auto; display: block; margin-bottom: 30px; }
++.login-title { font-size: 26px; font-weight: 800; color: #243746; margin: 0 0 6px; }
++.login-sub { color: #6b7d8c; margin: 0 0 26px; font-size: 15px; }
++.login-download {
++  display: flex; align-items: center; gap: 10px; margin-top: 6px; padding: 12px 14px;
++  border: 1px dashed #bcd0de; border-radius: 10px; color: #56687a; font-size: 14px; text-decoration: none;
++  transition: border-color .2s, background .2s;
++  svg { width: 20px; height: 20px; fill: none; stroke: #17b39b; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 20px; }
++  b { color: #243746; }
++  &:hover { border-color: #17b39b; background: #f0faf8; }
++}
++.login-foot { color: #9aa8b4; font-size: 12px; margin-top: 18px; text-align: center; }
++
++@keyframes drift { from { transform: translate(0, 0) scale(1); } to { transform: translate(40px, 30px) scale(1.12); } }
++@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
++@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
++
++@media (max-width: 1100px) { .hero-mascot { display: none; } }
++@media (max-width: 860px) {
++  .login-hero { display: none; }
++  .login-card { padding: 32px 20px; }
+ }
+ 
+ h1 {
+@@ -271,27 +376,40 @@ h1 {
+   margin-right: 10px;
+ }
+ 
+-.login-logo {
+-  width: 80px;
+-  height: 80px;
+-  margin: 0 auto 20px;
+-  display: block;
+-}
+-
+ .el-form-item {
+   ::v-deep(.el-form-item__label) {
+-    color: #fff;
++    color: #243746;
++    font-weight: 600;
+   }
+ 
+   .el-input {
+     ::v-deep(.el-input__wrapper) {
+-      border: 1px solid rgba(255, 255, 255, 0.1);
+-      background: transparent;
++      background: #fff;
++      border-radius: 10px;
++      padding: 4px 12px;
++      box-shadow: 0 0 0 1px #d9e2ea inset;
++      transition: box-shadow .2s;
++    }
++    ::v-deep(.el-input__wrapper.is-focus) {
++      box-shadow: 0 0 0 2px #17b39b inset;
+     }
+-
+     ::v-deep(input) {
+-      color: #fff;
++      color: #243746;
++      height: 38px;
+     }
+   }
+ }
++
++.login-button.el-button--primary {
++  height: 48px;
++  border: 0;
++  border-radius: 10px;
++  font-size: 16px;
++  font-weight: 700;
++  background: linear-gradient(90deg, #17b39b, #3f86c0);
++  background-size: 200% 100%;
++  transition: background-position .4s, transform .15s, box-shadow .2s;
++  &:hover { background-position: 100% 0; box-shadow: 0 10px 22px rgba(23, 179, 155, .3); transform: translateY(-1px); }
++  &:active { transform: none; }
++}
+ </style>
+\ No newline at end of file

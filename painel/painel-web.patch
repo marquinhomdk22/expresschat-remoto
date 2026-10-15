@@ -686,7 +686,7 @@ index 0000000..daf1fa2
 \ No newline at end of file
 diff --git a/src/views/dashboard/index.vue b/src/views/dashboard/index.vue
 new file mode 100644
-index 0000000..4f64e0e
+index 0000000..ef0b75f
 --- /dev/null
 +++ b/src/views/dashboard/index.vue
 @@ -0,0 +1,246 @@
@@ -707,7 +707,7 @@ index 0000000..4f64e0e
 +    <div class="kpis">
 +      <div class="kpi" v-for="(k, i) in kpis" :key="k.label" :style="{ animationDelay: i * 80 + 'ms' }">
 +        <div class="kpi-icon" :style="{ background: k.bg, color: k.color }">
-+          <el-icon><component :is="k.icon"/></el-icon>
++          <el-icon><component :is="`el-icon-${k.icon}`"/></el-icon>
 +        </div>
 +        <div>
 +          <div class="kpi-num">{{ k.value }}<small v-if="k.unit"> {{ k.unit }}</small></div>

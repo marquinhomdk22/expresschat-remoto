@@ -459,7 +459,12 @@ impl Client {
         let (peer, other_server, key, token) = if let Some((a, b, c)) = other_server.as_ref() {
             (a.as_ref(), b.as_ref(), c.as_ref(), "")
         } else {
-            (peer, "", key, token)
+            (
+                peer,
+                "",
+                key,
+                if crate::is_custom_client() { "" } else { token },
+            )
         };
         let (rendezvous_server, servers, contained) = if other_server.is_empty() {
             crate::get_rendezvous_server(1_000).await

@@ -204,10 +204,12 @@ jobs:
           if [ -n "$EC_SERVER" ] && [ -n "$EC_KEY" ]; then
             sed -i "s|pub const RENDEZVOUS_SERVERS: &\[&str\] = &\[\".*\"\];|pub const RENDEZVOUS_SERVERS: \&[\&str] = \&[\"$EC_SERVER\"];|" "$f"
             sed -i "s|pub const RS_PUB_KEY: &str = \".*\";|pub const RS_PUB_KEY: \&str = \"$EC_KEY\";|" "$f"
+            sed -i "s|pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new(\"\".to_owned());|pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new(\"$EC_SERVER\".to_owned());|" "$f"
+            sed -i "s|pub static ref APP_NAME: RwLock<String> = RwLock::new(\"RustDesk\".to_owned());|pub static ref APP_NAME: RwLock<String> = RwLock::new(\"ExpressChatRemoto\".to_owned());|" "$f"
           else
             echo "::warning::Secrets RENDEZVOUS_SERVER/RS_PUB_KEY vazios - usando servidor padrao"
           fi
-          grep -n "pub const RENDEZVOUS_SERVERS\|pub const RS_PUB_KEY" "$f"
+          grep -n "pub const RENDEZVOUS_SERVERS\|pub const RS_PUB_KEY\|PROD_RENDEZVOUS_SERVER: RwLock\|APP_NAME: RwLock" "$f"
 
       - name: Restore bridge files
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1

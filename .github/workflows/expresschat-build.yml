@@ -14,3 +14,17 @@ jobs:
       upload-artifact: true
       upload-tag: "expresschat"
       windows-only: true
+
+  renomear-instalador:
+    needs: build
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Publicar ExpressChatRemoto-Setup.exe
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release download expresschat -p 'rustdesk-*-x86_64.exe' -D out --clobber
+          mv out/rustdesk-*-x86_64.exe out/ExpressChatRemoto-Setup.exe
+          gh release upload expresschat out/ExpressChatRemoto-Setup.exe --clobber

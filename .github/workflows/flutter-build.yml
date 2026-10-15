@@ -454,7 +454,14 @@ jobs:
           sed -i '/dpiAware/d' res/manifest.xml
           pushd ./libs/portable
           pip3 install -r requirements.txt
-          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/rustdesk.exe
+          if [ "${{ inputs.windows-only }}" = "true" ]; then
+            # The installer names shortcuts and the uninstaller after APP_NAME, so the packed exe must carry that name.
+            mv ../../rustdesk/rustdesk.exe ../../rustdesk/ExpressChatRemoto.exe
+            python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/ExpressChatRemoto.exe
+            mv ../../rustdesk/ExpressChatRemoto.exe ../../rustdesk/rustdesk.exe
+          else
+            python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/rustdesk.exe
+          fi
           popd
           mkdir -p ./SignOutput
           mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe

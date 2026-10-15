@@ -16,7 +16,7 @@ index 9fe6c1d..f43c51e 100644
    <body>
      <div id="app"></div>
 diff --git a/src/router/index.js b/src/router/index.js
-index 7a18b97..1b9789b 100644
+index 7a18b97..c0fdb19 100644
 --- a/src/router/index.js
 +++ b/src/router/index.js
 @@ -32,6 +32,21 @@ const constantRoutes = [
@@ -41,6 +41,28 @@ index 7a18b97..1b9789b 100644
    // {
    //   path: '/',
    //   name: 'Index',
+@@ -48,6 +63,21 @@ export const asyncRoutes = [
+   //
+   //   ],
+   // },
++  {
++    path: '/lojas',
++    name: 'Stores',
++    redirect: '/lojas/quadro',
++    meta: { title: 'StoreBoard', icon: 'Shop' },
++    component: () => import('@/layout/index.vue'),
++    children: [
++      {
++        path: 'quadro',
++        name: 'StoreBoard',
++        meta: { title: 'StoreBoard', icon: 'Shop' },
++        component: () => import('@/views/dashboard/lojas.vue'),
++      },
++    ],
++  },
+   {
+     path: '/my',
+     name: 'My',
 diff --git a/src/store/app.js b/src/store/app.js
 index 46caaf3..02b7d1e 100644
 --- a/src/store/app.js
@@ -90,10 +112,10 @@ index 5c6878b..dc3e558 100644
    'zh-CN': zhCN,
 diff --git a/src/utils/i18n/pt_BR.json b/src/utils/i18n/pt_BR.json
 new file mode 100644
-index 0000000..daf1fa2
+index 0000000..150a1ad
 --- /dev/null
 +++ b/src/utils/i18n/pt_BR.json
-@@ -0,0 +1,589 @@
+@@ -0,0 +1,592 @@
 +{
 +  "Login": {
 +    "One": "Entrar"
@@ -681,9 +703,25 @@ index 0000000..daf1fa2
 +  },
 +  "Dashboard": {
 +    "One": "Dashboard"
++  },
++  "StoreBoard": {
++    "One": "Lojas e computadores"
 +  }
 +}
 \ No newline at end of file
+diff --git a/src/utils/peer.js b/src/utils/peer.js
+index d7d6198..7c6e3ce 100644
+--- a/src/utils/peer.js
++++ b/src/utils/peer.js
+@@ -2,7 +2,7 @@ export const connectByClient = (id) => {
+   //不新开窗口打开url protocol ,格式是 rustdesk://<id>
+   // window.open(`rustdesk://${row.id}`)
+   let a = document.createElement('a')
+-  a.href = `rustdesk://${id}`
++  a.href = `expresschatremoto://${id}`
+   a.target = '_self'
+   a.click()
+ 
 diff --git a/src/views/dashboard/index.vue b/src/views/dashboard/index.vue
 new file mode 100644
 index 0000000..ef0b75f
@@ -936,6 +974,367 @@ index 0000000..ef0b75f
 +@keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 +@keyframes growx { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 +</style>
+diff --git a/src/views/dashboard/lojas.vue b/src/views/dashboard/lojas.vue
+new file mode 100644
+index 0000000..1dcb8b5
+--- /dev/null
++++ b/src/views/dashboard/lojas.vue
+@@ -0,0 +1,355 @@
++<template>
++  <div class="board-page" v-loading="loading">
++    <div class="board-head">
++      <div>
++        <h2>Lojas e computadores</h2>
++        <p>Arraste os computadores para organizar por loja e setor (caixa, balcão, servidores...).</p>
++      </div>
++      <div class="head-actions">
++        <el-input v-model="search" placeholder="Buscar computador, ID ou loja" clearable class="search">
++          <template #prefix><el-icon><el-icon-search/></el-icon></template>
++        </el-input>
++        <el-button icon="ElIconRefresh" @click="load">Atualizar</el-button>
++        <el-button type="primary" icon="ElIconShop" @click="openStore()">Nova loja</el-button>
++      </div>
++    </div>
++
++    <div class="stats">
++      <span><b>{{ stores.length }}</b> lojas</span>
++      <span><b>{{ peers.length }}</b> computadores</span>
++      <span class="on"><i></i><b>{{ onlineCount }}</b> online agora</span>
++      <span v-if="unassigned.length" class="warn"><b>{{ unassigned.length }}</b> sem loja</span>
++    </div>
++
++    <div class="board">
++      <div v-if="unassigned.length" class="column inbox">
++        <div class="col-head">
++          <div>
++            <h3>Sem loja</h3>
++            <small>Computadores novos aparecem aqui</small>
++          </div>
++          <span class="count">{{ unassigned.length }}</span>
++        </div>
++        <div class="section">
++          <div class="cards">
++            <pc-card v-for="p in filter(unassigned)" :key="p.row_id" :peer="p"
++                     @dragstart="dragged = p" @connect="connect" @rename="rename"/>
++          </div>
++        </div>
++      </div>
++
++      <div v-for="(store, si) in visibleStores" :key="store.name" class="column" :style="{ animationDelay: si * 60 + 'ms' }">
++        <div class="col-head">
++          <div>
++            <h3>{{ store.name }}</h3>
++            <small>{{ store.total }} computador{{ store.total === 1 ? '' : 'es' }} · {{ store.online }} online</small>
++          </div>
++          <el-dropdown trigger="click" @command="c => storeCommand(c, store)">
++            <el-button text circle icon="ElIconMore"/>
++            <template #dropdown>
++              <el-dropdown-menu>
++                <el-dropdown-item command="sector" icon="ElIconFolderAdd">Novo setor</el-dropdown-item>
++                <el-dropdown-item command="rename" icon="ElIconEdit">Renomear loja</el-dropdown-item>
++              </el-dropdown-menu>
++            </template>
++          </el-dropdown>
++        </div>
++
++        <div v-for="sec in store.sections" :key="sec.group.id" class="section"
++             :class="{ over: overId === sec.group.id }"
++             @dragover.prevent="overId = sec.group.id" @dragleave="overId = null" @drop="drop(sec.group)">
++          <div class="sec-head">
++            <span class="sec-name"><el-icon><el-icon-folder/></el-icon>{{ sec.label }}</span>
++            <span class="sec-count">{{ sec.peers.length }}</span>
++          </div>
++          <div class="cards">
++            <pc-card v-for="p in filter(sec.peers)" :key="p.row_id" :peer="p"
++                     @dragstart="dragged = p" @connect="connect" @rename="rename"/>
++            <div v-if="!sec.peers.length" class="drop-hint">Arraste computadores para cá</div>
++          </div>
++        </div>
++
++        <button class="add-sector" @click="openSector(store)">
++          <el-icon><el-icon-plus/></el-icon>Adicionar setor
++        </button>
++      </div>
++
++      <div v-if="!stores.length && !loading" class="empty-board">
++        <el-icon><el-icon-shop/></el-icon>
++        <h3>Nenhuma loja ainda</h3>
++        <p>Crie a primeira loja, por exemplo "FarmaHall", e depois os setores: Caixa, Balcão, Servidores.</p>
++        <el-button type="primary" icon="ElIconShop" @click="openStore()">Criar loja</el-button>
++      </div>
++    </div>
++
++    <el-dialog v-model="dlg.visible" :title="dlg.title" width="420px">
++      <el-form label-position="top" @submit.prevent="saveDialog">
++        <el-form-item v-if="dlg.mode === 'sector'" label="Loja">
++          <el-input :model-value="dlg.store" disabled/>
++        </el-form-item>
++        <el-form-item :label="dlg.label">
++          <el-input v-model="dlg.value" :placeholder="dlg.placeholder" autofocus @keyup.enter="saveDialog"/>
++        </el-form-item>
++        <div v-if="dlg.mode === 'store'" class="quick">
++          <span>Setores para criar junto:</span>
++          <el-checkbox-group v-model="dlg.sectors">
++            <el-checkbox v-for="s in defaultSectors" :key="s" :label="s" :value="s">{{ s }}</el-checkbox>
++          </el-checkbox-group>
++        </div>
++      </el-form>
++      <template #footer>
++        <el-button @click="dlg.visible = false">Cancelar</el-button>
++        <el-button type="primary" :loading="dlg.saving" @click="saveDialog">Salvar</el-button>
++      </template>
++    </el-dialog>
++  </div>
++</template>
++
++<script setup>
++import { ref, reactive, computed, onMounted, h } from 'vue'
++import { ElMessage, ElMessageBox } from 'element-plus'
++import { list as peerList, update as peerUpdate } from '@/api/peer'
++import { list as groupList, create as groupCreate, update as groupUpdate } from '@/api/device_group'
++import { connectByClient } from '@/utils/peer'
++import { timeAgo } from '@/utils/time'
++
++const SEP = ' / '
++const defaultSectors = ['Caixa', 'Balcão', 'Gerência', 'Servidores']
++
++const isOnline = (p) => p.last_online_time && (Date.now() / 1000 - p.last_online_time) < 60
++
++const PcCard = (props, { emit }) => {
++  const p = props.peer
++  const on = isOnline(p)
++  return h('div', {
++    class: ['pc', { online: on }],
++    draggable: 'true',
++    onDragstart: (e) => { e.dataTransfer.effectAllowed = 'move'; emit('dragstart') },
++  }, [
++    h('div', { class: 'pc-top' }, [
++      h('span', { class: 'st', title: on ? 'Online' : 'Offline' }),
++      h('b', { class: 'pc-name', title: p.hostname || '' }, p.alias || p.hostname || p.id),
++    ]),
++    h('div', { class: 'pc-meta' }, [
++      h('span', null, 'ID ' + p.id),
++      h('span', null, on ? 'Online agora' : (p.last_online_time ? timeAgo(p.last_online_time * 1000) : 'Nunca conectou')),
++    ]),
++    h('div', { class: 'pc-actions' }, [
++      h('button', { class: 'pc-btn primary', onClick: () => emit('connect', p) }, 'Conectar'),
++      h('button', { class: 'pc-btn', onClick: () => emit('rename', p) }, 'Apelido'),
++    ]),
++  ])
++}
++PcCard.props = ['peer']
++PcCard.emits = ['dragstart', 'connect', 'rename']
++
++const loading = ref(false)
++const peers = ref([])
++const groups = ref([])
++const search = ref('')
++const dragged = ref(null)
++const overId = ref(null)
++
++const fetchAll = async (fn) => {
++  const out = []
++  for (let page = 1; page <= 20; page++) {
++    const res = await fn({ page, page_size: 500 }).catch(_ => false)
++    const rows = res?.data?.list || []
++    out.push(...rows)
++    if (rows.length < 500) break
++  }
++  return out
++}
++
++const load = async () => {
++  loading.value = true
++  const [p, g] = await Promise.all([fetchAll(peerList), fetchAll(groupList)])
++  peers.value = p
++  groups.value = g
++  loading.value = false
++}
++onMounted(load)
++
++const splitName = (name) => {
++  const i = name.indexOf(SEP)
++  return i === -1 ? [name.trim(), ''] : [name.slice(0, i).trim(), name.slice(i + SEP.length).trim()]
++}
++
++const stores = computed(() => {
++  const map = {}
++  groups.value.forEach(g => {
++    const [store, sector] = splitName(g.name || '')
++    map[store] = map[store] || { name: store, sections: [] }
++    map[store].sections.push({ group: g, label: sector || 'Geral', isGeneral: !sector, peers: [] })
++  })
++  const byGroup = {}
++  Object.values(map).forEach(s => s.sections.forEach(sec => { byGroup[sec.group.id] = sec }))
++  peers.value.forEach(p => { if (byGroup[p.group_id]) byGroup[p.group_id].peers.push(p) })
++  return Object.values(map)
++    .map(s => {
++      s.sections.sort((a, b) => (b.isGeneral - a.isGeneral) || a.label.localeCompare(b.label, 'pt-BR'))
++      const all = s.sections.flatMap(sec => sec.peers)
++      return { ...s, total: all.length, online: all.filter(isOnline).length }
++    })
++    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
++})
++const groupIds = computed(() => new Set(groups.value.map(g => g.id)))
++const unassigned = computed(() => peers.value.filter(p => !groupIds.value.has(p.group_id)))
++const onlineCount = computed(() => peers.value.filter(isOnline).length)
++
++const q = computed(() => search.value.trim().toLowerCase())
++const match = (p) => !q.value || [p.alias, p.hostname, p.id].some(v => (v || '').toLowerCase().includes(q.value))
++const filter = (list) => list.filter(match)
++const visibleStores = computed(() => !q.value ? stores.value : stores.value.filter(s =>
++  s.name.toLowerCase().includes(q.value) || s.sections.some(sec => sec.peers.some(match))))
++
++const drop = async (group) => {
++  overId.value = null
++  const p = dragged.value
++  dragged.value = null
++  if (!p || p.group_id === group.id) return
++  const old = p.group_id
++  p.group_id = group.id
++  const res = await peerUpdate({ ...p, group_id: group.id }).catch(_ => false)
++  if (res) {
++    ElMessage.success(`${p.alias || p.hostname || p.id} movido para ${group.name}`)
++  } else {
++    p.group_id = old
++  }
++}
++
++const connect = (p) => connectByClient(p.id)
++
++const rename = async (p) => {
++  const r = await ElMessageBox.prompt('Nome que aparece no painel (ex.: Caixa 1)', 'Apelido do computador', {
++    inputValue: p.alias || '', confirmButtonText: 'Salvar', cancelButtonText: 'Cancelar',
++  }).catch(_ => false)
++  if (!r) return
++  const alias = r.value.trim()
++  if (!alias) return
++  const res = await peerUpdate({ ...p, alias }).catch(_ => false)
++  if (res) { p.alias = alias; ElMessage.success('Apelido salvo') }
++}
++
++const dlg = reactive({ visible: false, mode: 'store', title: '', label: '', placeholder: '', value: '', store: '', sectors: [], saving: false, target: null })
++const openStore = () => Object.assign(dlg, {
++  visible: true, mode: 'store', title: 'Nova loja', label: 'Nome da loja', placeholder: 'Ex.: FarmaHall Recreio',
++  value: '', sectors: ['Caixa', 'Balcão'], target: null,
++})
++const openSector = (store) => Object.assign(dlg, {
++  visible: true, mode: 'sector', title: 'Novo setor', label: 'Nome do setor', placeholder: 'Ex.: Caixa, Balcão, Servidores',
++  value: '', store: store.name, target: store,
++})
++const openRename = (store) => Object.assign(dlg, {
++  visible: true, mode: 'rename', title: 'Renomear loja', label: 'Novo nome da loja', placeholder: store.name,
++  value: store.name, target: store,
++})
++const storeCommand = (c, store) => (c === 'sector' ? openSector(store) : openRename(store))
++
++const saveDialog = async () => {
++  const name = dlg.value.replace(/\//g, '-').trim()
++  if (!name) return ElMessage.warning('Digite um nome')
++  dlg.saving = true
++  let ok = true
++  if (dlg.mode === 'store') {
++    if (stores.value.some(s => s.name.toLowerCase() === name.toLowerCase())) {
++      dlg.saving = false
++      return ElMessage.warning('Já existe uma loja com esse nome')
++    }
++    for (const n of [name, ...dlg.sectors.map(s => name + SEP + s)]) {
++      ok = !!(await groupCreate({ name: n }).catch(_ => false)) && ok
++    }
++  } else if (dlg.mode === 'sector') {
++    const full = dlg.store + SEP + name
++    if (groups.value.some(g => g.name.toLowerCase() === full.toLowerCase())) {
++      dlg.saving = false
++      return ElMessage.warning('Esse setor já existe nessa loja')
++    }
++    ok = !!(await groupCreate({ name: full }).catch(_ => false))
++  } else {
++    for (const sec of dlg.target.sections) {
++      const n = sec.isGeneral ? name : name + SEP + sec.label
++      ok = !!(await groupUpdate({ id: sec.group.id, name: n }).catch(_ => false)) && ok
++    }
++  }
++  dlg.saving = false
++  if (ok) ElMessage.success('Salvo')
++  dlg.visible = false
++  load()
++}
++</script>
++
++<style scoped lang="scss">
++.board-page { padding: 4px; }
++.board-head {
++  display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 12px;
++  h2 { margin: 0; font-size: 22px; }
++  p { margin: 4px 0 0; color: var(--el-text-color-secondary); }
++}
++.head-actions { display: flex; gap: 8px; flex-wrap: wrap; .search { width: 260px; } .el-button + .el-button { margin-left: 0; } }
++.stats {
++  display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 16px; font-size: 14px; color: var(--el-text-color-secondary);
++  b { color: var(--el-text-color-primary); margin-right: 3px; }
++  .on i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #17b39b; margin-right: 6px; animation: pulse 1.8s infinite; }
++  .warn b { color: #e6a23c; }
++}
++.board { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 14px; align-items: flex-start; min-height: 420px; }
++.column {
++  flex: 0 0 300px; background: var(--el-fill-color-light); border: 1px solid var(--el-border-color-lighter);
++  border-radius: 14px; padding: 12px; animation: rise .45s ease both;
++  &.inbox { background: #fdf6ec; border-color: #f5dab1; }
++}
++.col-head {
++  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 2px 4px 10px;
++  h3 { margin: 0; font-size: 16px; }
++  small { color: var(--el-text-color-secondary); }
++  .count { background: #e6a23c; color: #fff; font-weight: 700; font-size: 12px; border-radius: 999px; padding: 2px 9px; }
++}
++.section {
++  background: var(--el-bg-color); border: 1px solid var(--el-border-color-lighter); border-radius: 12px;
++  padding: 10px; margin-bottom: 10px; transition: border-color .15s, box-shadow .15s, background .15s;
++  &.over { border-color: #17b39b; box-shadow: 0 0 0 3px rgba(23, 179, 155, .18); background: #f3fbf9; }
++}
++.inbox .section { background: #fff; }
++.sec-head {
++  display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
++  .sec-name { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; color: #3f86c0; }
++  .sec-count { font-size: 12px; color: var(--el-text-color-secondary); background: var(--el-fill-color); border-radius: 999px; padding: 1px 8px; }
++}
++.cards { display: flex; flex-direction: column; gap: 8px; min-height: 36px; }
++.drop-hint { border: 1px dashed var(--el-border-color); border-radius: 10px; padding: 12px; text-align: center; font-size: 12px; color: var(--el-text-color-secondary); }
++.add-sector {
++  width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px; border-radius: 10px;
++  border: 1px dashed var(--el-border-color); background: transparent; color: var(--el-text-color-secondary); cursor: pointer; font: inherit; font-size: 13px;
++  transition: color .15s, border-color .15s, background .15s;
++  &:hover { color: #17b39b; border-color: #17b39b; background: #f3fbf9; }
++}
++:deep(.pc) {
++  background: var(--el-bg-color); border: 1px solid var(--el-border-color-lighter); border-left: 3px solid #c0ccd6;
++  border-radius: 10px; padding: 9px 10px; cursor: grab; transition: transform .15s, box-shadow .15s;
++  &:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(36, 55, 70, .1); }
++  &:active { cursor: grabbing; }
++  &.online { border-left-color: #17b39b; }
++  .pc-top { display: flex; align-items: center; gap: 8px; }
++  .st { width: 8px; height: 8px; border-radius: 50%; background: #c0ccd6; flex: 0 0 8px; }
++  &.online .st { background: #17b39b; box-shadow: 0 0 0 3px rgba(23, 179, 155, .2); }
++  .pc-name { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
++  .pc-meta { display: flex; justify-content: space-between; gap: 6px; font-size: 12px; color: var(--el-text-color-secondary); margin: 4px 0 8px 16px; }
++  .pc-actions { display: flex; gap: 6px; margin-left: 16px; }
++  .pc-btn {
++    font: inherit; font-size: 12px; font-weight: 600; border-radius: 7px; padding: 4px 10px; cursor: pointer;
++    border: 1px solid var(--el-border-color); background: var(--el-bg-color); color: var(--el-text-color-regular);
++    &:hover { border-color: #3f86c0; color: #3f86c0; }
++    &.primary { background: #17b39b; border-color: #17b39b; color: #fff; &:hover { background: #129c87; color: #fff; } }
++  }
++}
++.empty-board {
++  flex: 1; text-align: center; padding: 60px 20px; color: var(--el-text-color-secondary);
++  > .el-icon { font-size: 44px; color: #17b39b; }
++  h3 { color: var(--el-text-color-primary); margin: 10px 0 6px; }
++  p { max-width: 420px; margin: 0 auto 16px; }
++}
++.quick { font-size: 13px; color: var(--el-text-color-secondary); }
++@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
++@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(23, 179, 155, .5); } 70% { box-shadow: 0 0 0 8px rgba(23, 179, 155, 0); } 100% { box-shadow: 0 0 0 0 rgba(23, 179, 155, 0); } }
++</style>
 diff --git a/src/views/login/login.vue b/src/views/login/login.vue
 index f4b104f..1895337 100644
 --- a/src/views/login/login.vue
@@ -1148,3 +1547,185 @@ index f4b104f..1895337 100644
 +}
  </style>
 \ No newline at end of file
+diff --git a/src/views/peer/index.vue b/src/views/peer/index.vue
+index fd232ac..5bc3920 100644
+--- a/src/views/peer/index.vue
++++ b/src/views/peer/index.vue
+@@ -1,14 +1,14 @@
+ <template>
+   <div>
+     <el-card class="list-query" shadow="hover">
+-      <el-form inline label-width="60px">
++      <el-form inline label-width="auto" class="peer-filter">
+         <el-form-item label="ID">
+           <el-input v-model="listQuery.id" clearable/>
+         </el-form-item>
+         <el-form-item :label="T('Hostname')">
+           <el-input v-model="listQuery.hostname" clearable/>
+         </el-form-item>
+-        <el-form-item :label="T('LastOnlineTime')" label-width="100px">
++        <el-form-item :label="T('LastOnlineTime')">
+           <el-select v-model="listQuery.time_ago" clearable>
+             <el-option
+                 v-for="item in timeFilters"
+@@ -26,9 +26,9 @@
+           <el-input v-model="listQuery.ip" clearable/>
+         </el-form-item>
+         <el-form-item>
+-          <el-button type="primary" @click="handlerQuery">{{ T('Filter') }}</el-button>
+-          <el-button type="danger" @click="toAdd">{{ T('Add') }}</el-button>
+-          <el-button type="success" @click="toExport">{{ T('Export') }}</el-button>
++          <el-button type="primary" icon="ElIconSearch" @click="handlerQuery">{{ T('Filter') }}</el-button>
++          <el-button icon="ElIconPlus" @click="toAdd">{{ T('Add') }}</el-button>
++          <el-button icon="ElIconDownload" @click="toExport">{{ T('Export') }}</el-button>
+           <el-popover :visible="showImport" placement="bottom" :width="600">
+             <el-upload
+                 class="upload-demo"
+@@ -53,11 +53,11 @@
+             </el-upload>
+             <el-button @click="showImport=false" type="primary">{{ T('Cancel') }}</el-button>
+             <template #reference>
+-              <el-button @click="showImport=true" type="danger" :icon="ArrowDown">{{ T('Import') }}</el-button>
++              <el-button @click="showImport=true" icon="ElIconUpload">{{ T('Import') }}</el-button>
+             </template>
+           </el-popover>
+-          <el-button type="danger" @click="toBatchDelete">{{ T('BatchDelete') }}</el-button>
+-          <el-button type="primary" @click="toBatchAddToAB">{{ T('BatchAddToAB') }}</el-button>
++          <el-button icon="ElIconNotebook" @click="toBatchAddToAB">{{ T('BatchAddToAB') }}</el-button>
++          <el-button type="danger" plain icon="ElIconDelete" @click="toBatchDelete">{{ T('BatchDelete') }}</el-button>
+         </el-form-item>
+       </el-form>
+     </el-card>
+@@ -66,7 +66,7 @@
+         <el-button :icon="Setting" @click="showColumnSetting"></el-button>
+       </div>
+ 
+-      <el-table :data="listRes.list" v-loading="listRes.loading" border size="small" @selection-change="handleSelectionChange">
++      <el-table :data="listRes.list" v-loading="listRes.loading" class="peer-table" @selection-change="handleSelectionChange">
+         <el-table-column type="selection" width="55" align="center"/>
+         <template v-for="c in visibleColumns.filter(cc => cc.visible)" :key="c">
+           <el-table-column v-if="c.name==='id'" prop="id" label="ID" align="center" width="150">
+@@ -75,19 +75,24 @@
+             </template>
+           </el-table-column>
+           <el-table-column v-if="c.name==='cpu'" prop="cpu" label="CPU" align="center" width="100" show-overflow-tooltip/>
+-          <el-table-column v-if="c.name==='hostname'" prop="hostname" :label="T('Hostname')" align="center" width="120"/>
++          <el-table-column v-if="c.name==='hostname'" prop="hostname" :label="T('Hostname')" min-width="150" show-overflow-tooltip>
++            <template #default="{row}">
++              <div class="pc-name"><b>{{ row.alias || row.hostname || row.id }}</b><small v-if="row.alias && row.hostname">{{ row.hostname }}</small></div>
++            </template>
++          </el-table-column>
+           <el-table-column v-if="c.name==='memory'" prop="memory" :label="T('Memory')" align="center" width="120"/>
+           <el-table-column v-if="c.name==='os'" prop="os" :label="T('Os')" align="center" width="120" show-overflow-tooltip/>
+           <el-table-column v-if="c.name==='last_online_time'" prop="last_online_time" :label="T('LastOnlineTime')" align="center" min-width="120">
+             <template #default="{row}">
+               <div class="last_oline_time">
+-                <span> {{ row.last_online_time ? timeAgo(row.last_online_time * 1000) : '-' }}</span> <span class="dot" :class="{red: timeDis(row.last_online_time) >= 60, green: timeDis(row.last_online_time)< 60}"></span>
++                <el-tag v-if="row.last_online_time && timeDis(row.last_online_time) < 60" type="success" effect="light" round size="small"><span class="dot green"></span>Online</el-tag>
++                <el-tag v-else type="info" effect="plain" round size="small"><span class="dot red"></span>{{ row.last_online_time ? timeAgo(row.last_online_time * 1000) : 'Nunca conectou' }}</el-tag>
+               </div>
+             </template>
+           </el-table-column>
+           <el-table-column v-if="c.name==='last_online_ip'" prop="last_online_ip" :label="T('LastOnlineIp')" align="center" min-width="120"/>
+           <el-table-column v-if="c.name==='username'" prop="username" :label="T('Username')" align="center" width="120"/>
+-          <el-table-column v-if="c.name==='group_id'" prop="group_id" :label="T('Group')" align="center" width="120">
++          <el-table-column v-if="c.name==='group_id'" prop="group_id" :label="T('Group')" align="center" min-width="210">
+             <template #default="{row}">
+               <span v-if="row.group_id"> <el-tag>{{ groupListRes.list?.find(g => g.id === row.group_id)?.name }} </el-tag> </span>
+               <span v-else> - </span>
+@@ -100,13 +105,15 @@
+           <el-table-column v-if="c.name==='updated_at'" prop="updated_at" :label="T('UpdatedAt')" align="center" width="150"/>
+         </template>
+ 
+-        <el-table-column :label="T('Actions')" align="center" width="500" class-name="table-actions" fixed="right">
++        <el-table-column :label="T('Actions')" align="center" width="430" class-name="table-actions" fixed="right">
+           <template #default="{row}">
+-            <el-button type="success" @click="connectByClient(row.id)">{{ T('Link') }}</el-button>
+-            <el-button v-if="appStore.setting.appConfig.web_client" type="success" @click="toWebClientLink(row)">Web Client</el-button>
+-            <el-button type="primary" @click="toAddressBook(row)">{{ T('AddToAddressBook') }}</el-button>
+-            <el-button @click="toEdit(row)">{{ T('Edit') }}</el-button>
+-            <el-button type="danger" @click="del(row)">{{ T('Delete') }}</el-button>
++            <div class="row-actions">
++              <el-button type="primary" size="small" icon="ElIconMonitor" @click="connectByClient(row.id)">Conectar</el-button>
++              <el-button v-if="appStore.setting.appConfig.web_client" size="small" icon="ElIconCompass" @click="toWebClientLink(row)">Navegador</el-button>
++              <el-button size="small" icon="ElIconNotebook" @click="toAddressBook(row)">Agenda</el-button>
++              <el-button size="small" icon="ElIconEdit" @click="toEdit(row)">{{ T('Edit') }}</el-button>
++              <el-button size="small" type="danger" text icon="ElIconDelete" @click="del(row)">{{ T('Delete') }}</el-button>
++            </div>
+           </template>
+         </el-table-column>
+       </el-table>
+@@ -527,27 +534,27 @@
+ 
+   const columnSettingVisible = ref(false)
+   const allColumns = ref([
+-    { name: 'id', visible: true, label: 'Id' },
+-    { name: 'cpu', visible: true, label: 'Cpu' },
+     { name: 'hostname', visible: true, label: 'Hostname' },
+-    { name: 'memory', visible: true, label: 'Memory' },
+-    { name: 'os', visible: true, label: 'Os' },
++    { name: 'id', visible: true, label: 'Id' },
++    { name: 'group_id', visible: true, label: 'Group' },
+     { name: 'last_online_time', visible: true, label: 'LastOnlineTime' },
++    { name: 'os', visible: true, label: 'Os' },
+     { name: 'last_online_ip', visible: true, label: 'LastOnlineIp' },
+-    { name: 'username', visible: true, label: 'Username' },
+-    { name: 'group_id', visible: true, label: 'Group' },
+-    { name: 'uuid', visible: true, label: 'Uuid' },
+-    { name: 'version', visible: true, label: 'Version' },
+-    { name: 'alias', visible: true, label: 'Alias' },
+-    { name: 'created_at', visible: true, label: 'CreatedAt' },
+-    { name: 'updated_at', visible: true, label: 'UpdatedAt' },
++    { name: 'username', visible: false, label: 'Username' },
++    { name: 'alias', visible: false, label: 'Alias' },
++    { name: 'cpu', visible: false, label: 'Cpu' },
++    { name: 'memory', visible: false, label: 'Memory' },
++    { name: 'uuid', visible: false, label: 'Uuid' },
++    { name: 'version', visible: false, label: 'Version' },
++    { name: 'created_at', visible: false, label: 'CreatedAt' },
++    { name: 'updated_at', visible: false, label: 'UpdatedAt' },
+   ])
+-  const visibleColumns = ref(JSON.parse(localStorage.getItem('peer_visible_columns')) || allColumns.value)
++  const visibleColumns = ref(JSON.parse(localStorage.getItem('peer_visible_columns_v2')) || allColumns.value)
+   const showColumnSetting = () => {
+     columnSettingVisible.value = true
+   }
+   const saveColumnSetting = () => {
+-    localStorage.setItem('peer_visible_columns', JSON.stringify(visibleColumns.value))
++    localStorage.setItem('peer_visible_columns_v2', JSON.stringify(visibleColumns.value))
+     ElMessage.success(T('OperationSuccess'))
+     columnSettingVisible.value = false
+   }
+@@ -573,6 +580,13 @@
+   --el-select-width: 180px;
+ }
+ 
++.peer-filter :deep(.el-form-item__label) { white-space: nowrap; }
++.peer-filter :deep(.el-input) { width: 170px; }
++
++.peer-table :deep(.el-table__cell) { padding: 10px 0; }
++.pc-name { display: flex; flex-direction: column; line-height: 1.3; small { color: var(--el-text-color-secondary); } }
++.row-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; .el-button + .el-button { margin-left: 0; } }
++
+ .last_oline_time {
+   display: flex;
+   justify-content: center;
+@@ -586,12 +600,16 @@
+   border-radius: 50%;
+   margin-left: 10px;
+ 
++  margin: 0 6px 0 0;
++  display: inline-block;
++
+   &.red {
+-    background-color: red;
++    background-color: #a8b4bf;
+   }
+ 
+   &.green {
+-    background-color: green;
++    background-color: #17b39b;
++    box-shadow: 0 0 0 3px rgba(23, 179, 155, .2);
+   }
+ }
+ </style>

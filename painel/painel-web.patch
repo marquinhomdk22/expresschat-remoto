@@ -2446,13 +2446,28 @@ index fd232ac..2796500 100644
  </style>
 diff --git a/src/views/protecao/index.vue b/src/views/protecao/index.vue
 new file mode 100644
-index 0000000..f49f63c
+index 0000000..73e0f17
 --- /dev/null
 +++ b/src/views/protecao/index.vue
-@@ -0,0 +1,261 @@
+@@ -0,0 +1,288 @@
 +<template>
 +  <div class="prot" v-loading="loading">
 +    <p class="lead">Escolha a loja ou o setor e ligue as travas. As regras valem mesmo sem internet, direto no computador.</p>
++    <div class="activate">
++      <div class="act-ic"><el-icon><el-icon-download/></el-icon></div>
++      <div class="act-txt">
++        <b>Instale o ExpressChat Proteção nos computadores</b>
++        <p>Baixe o programa, rode como administrador e cole o <b>código de ativação</b> abaixo. Ele liga o PC ao seu painel.</p>
++      </div>
++      <div class="act-code">
++        <span class="lbl">Código de ativação</span>
++        <div class="code-row">
++          <code>{{ enrollToken || '...' }}</code>
++          <el-button size="small" icon="ElIconCopyDocument" @click="copyToken">Copiar</el-button>
++        </div>
++      </div>
++      <el-button type="primary" icon="ElIconDownload" tag="a" :href="installerUrl" target="_blank">Baixar instalador</el-button>
++    </div>
 +
 +    <div class="kpis">
 +      <div class="kpi"><span class="ic teal"><el-icon><el-icon-finished/></el-icon></span><div><div class="num">{{ kpis.protected }}</div><div class="lbl">PCs protegidos</div></div></div>
@@ -2572,6 +2587,8 @@ index 0000000..f49f63c
 +
 +const DEFAULT = { blockInstall: false, installAllow: [], blockSites: false, sitesMode: 'block', sitesList: [], adultBlock: false, forceStandardUser: false }
 +
++const installerUrl = 'https://github.com/marquinhomdk22/expresschat-remoto/releases/download/protecao/ExpressChatProtecao-Setup.exe'
++const enrollToken = ref('')
 +const loading = ref(false)
 +const saving = ref(false)
 +const dirty = ref(false)
@@ -2640,6 +2657,7 @@ index 0000000..f49f63c
 +  } catch (e) { ElMessage.error(e.message) } finally { saving.value = false }
 +}
 +
++async function copyToken () { try { await navigator.clipboard.writeText(enrollToken.value); ElMessage.success('Código copiado') } catch (e) { ElMessage.info(enrollToken.value) } }
 +const minsLeft = (until) => Math.max(0, Math.round((until - Date.now()) / 60000))
 +async function assign (d, v) {
 +  const [store, sector] = String(v).split('||')
@@ -2654,7 +2672,10 @@ index 0000000..f49f63c
 +
 +onMounted(async () => {
 +  loading.value = true
-+  try { await loadGroups(); await loadOverview(); await pick('global', '', 'Todas as lojas') }
++  try {
++    const m = await prot.me().catch(() => null); if (m) enrollToken.value = m.enrollToken
++    await loadGroups(); await loadOverview(); await pick('global', '', 'Todas as lojas')
++  }
 +  catch (e) { ElMessage.error('Não deu para carregar a Proteção. ' + e.message) }
 +  finally { loading.value = false }
 +})
@@ -2663,6 +2684,12 @@ index 0000000..f49f63c
 +<style scoped lang="scss">
 +.prot { padding: 2px; }
 +.lead { margin: 0 0 16px; color: var(--el-text-color-secondary); }
++.activate { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; background: linear-gradient(135deg, #1c2a38, #243746); color: #fff; border-radius: 14px; padding: 16px 20px; margin-bottom: 16px; }
++.activate .act-ic { width: 46px; height: 46px; border-radius: 12px; background: rgba(95,224,201,.15); color: #5fe0c9; display: grid; place-items: center; font-size: 22px; flex: 0 0 46px; }
++.activate .act-txt { flex: 1; min-width: 220px; b { font-size: 15px } p { color: #b9d3e6; font-size: 13px; margin-top: 3px; line-height: 1.4; b { color: #fff } } }
++.activate .act-code { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 10px; padding: 8px 12px; }
++.activate .act-code .lbl { font-size: 11px; color: #9fb3c4; text-transform: uppercase; letter-spacing: .5px; }
++.activate .code-row { display: flex; align-items: center; gap: 8px; margin-top: 3px; code { font-family: monospace; font-size: 14px; color: #5fe0c9; } }
 +.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 18px; }
 +.kpi { background: var(--el-bg-color); border: 1px solid var(--el-border-color-lighter); border-radius: 14px; padding: 16px; display: flex; gap: 14px; align-items: center; }
 +.kpi .ic { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; flex: 0 0 46px; }

@@ -47,9 +47,12 @@ const rid = () => crypto.randomBytes(8).toString('hex')
 const now = () => Date.now()
 
 // ---------- app ----------
-const app = express()
+const BASE_PATH = (process.env.BASE_PATH || '').replace(/\/+$/, '') // ex.: /ec-protecao
+const root = express()
+const app = express.Router()
+root.disable('x-powered-by')
+root.use(BASE_PATH || '/', app)
 app.use(express.json({ limit: '512kb' }))
-app.disable('x-powered-by')
 app.use((req, res, next) => {
   const o = req.headers.origin
   if (o && PANEL_ORIGINS.includes(o)) {
@@ -245,4 +248,4 @@ app.post('/agent/report', (req, res) => {
   res.json({ ok: true })
 })
 
-app.listen(PORT, () => console.log('ExpressChat Proteção API na porta ' + PORT))
+root.listen(PORT, () => console.log('ExpressChat Proteção API na porta ' + PORT + ' base=' + (BASE_PATH || '/')))

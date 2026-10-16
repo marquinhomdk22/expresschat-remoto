@@ -15,6 +15,38 @@ index 9fe6c1d..f43c51e 100644
    </head>
    <body>
      <div id="app"></div>
+diff --git a/src/api/protecao.js b/src/api/protecao.js
+new file mode 100644
+index 0000000..ca9c54e
+--- /dev/null
++++ b/src/api/protecao.js
+@@ -0,0 +1,26 @@
++// Cliente da API de Proteção (mesmo domínio do painel, caminho /ec-protecao).
++import { getToken } from '@/utils/auth'
++
++const BASE = '/ec-protecao'
++
++async function call (path, { method = 'GET', body } = {}) {
++  const res = await fetch(BASE + path, {
++    method,
++    headers: {
++      'content-type': 'application/json',
++      'x-ec-token': getToken() || '',
++    },
++    body: body ? JSON.stringify(body) : undefined,
++  })
++  const data = await res.json().catch(() => ({}))
++  if (!res.ok) throw new Error(data.error || ('erro ' + res.status))
++  return data
++}
++
++export const me = () => call('/admin/me')
++export const overview = () => call('/admin/overview')
++export const getRule = (scope, key) => call(`/admin/rules?scope=${encodeURIComponent(scope)}&key=${encodeURIComponent(key || '')}`)
++export const saveRule = (scope, key, data) => call('/admin/rules', { method: 'POST', body: { scope, key, data } })
++export const assignDevice = (deviceId, storeName, sector) => call('/admin/device/assign', { method: 'POST', body: { deviceId, storeName, sector } })
++export const release = (deviceId, minutes) => call('/admin/release', { method: 'POST', body: { deviceId, minutes } })
++export const events = () => call('/admin/events')
 diff --git a/src/layout/components/aside.vue b/src/layout/components/aside.vue
 index 4d43983..363ba91 100644
 --- a/src/layout/components/aside.vue
@@ -201,10 +233,10 @@ index 5579890..b6bb9e0 100644
 +  @media (max-width: 900px) { .quick-search, .page-title { display: none; } }
  </style>
 diff --git a/src/layout/components/menu/index.vue b/src/layout/components/menu/index.vue
-index 38de891..b381b94 100644
+index 38de891..b312a2f 100644
 --- a/src/layout/components/menu/index.vue
 +++ b/src/layout/components/menu/index.vue
-@@ -3,54 +3,92 @@
+@@ -3,54 +3,93 @@
            class="menus"
            :collapse="isCollapse"
            :default-active="activeIndex"
@@ -238,6 +270,7 @@ index 38de891..b381b94 100644
 +    { name: 'DashboardIndex', title: 'Início', icon: 'House' },
 +    { name: 'StoreBoard', title: 'Lojas e computadores', icon: 'Shop' },
 +    { name: 'Peer', title: 'Computadores', icon: 'Monitor' },
++    { name: 'Protecao', title: 'Proteção', icon: 'Lock' },
 +    { name: 'Team', title: 'Equipe', icon: 'UserFilled' },
 +    { name: 'History', title: 'Histórico', icon: 'Clock' },
 +    { name: 'Settings', title: 'Configurações', icon: 'Setting' },
@@ -378,7 +411,7 @@ index d5ab9d4..09e9c1b 100644
  
  .header-tags {
 diff --git a/src/router/index.js b/src/router/index.js
-index 7a18b97..5c0ff22 100644
+index 7a18b97..2bf8786 100644
 --- a/src/router/index.js
 +++ b/src/router/index.js
 @@ -32,6 +32,21 @@ const constantRoutes = [
@@ -403,7 +436,7 @@ index 7a18b97..5c0ff22 100644
    // {
    //   path: '/',
    //   name: 'Index',
-@@ -48,6 +63,66 @@ export const asyncRoutes = [
+@@ -48,6 +63,81 @@ export const asyncRoutes = [
    //
    //   ],
    // },
@@ -419,6 +452,21 @@ index 7a18b97..5c0ff22 100644
 +        name: 'StoreBoard',
 +        meta: { title: 'StoreBoard', icon: 'Shop' },
 +        component: () => import('@/views/dashboard/lojas.vue'),
++      },
++    ],
++  },
++  {
++    path: '/protecao',
++    name: 'ProtecaoWrap',
++    redirect: '/protecao/inicio',
++    meta: { title: 'Protecao', icon: 'Lock' },
++    component: () => import('@/layout/index.vue'),
++    children: [
++      {
++        path: 'inicio',
++        name: 'Protecao',
++        meta: { title: 'Protecao', icon: 'Lock' },
++        component: () => import('@/views/protecao/index.vue'),
 +      },
 +    ],
 +  },
@@ -550,10 +598,10 @@ index 5c6878b..dc3e558 100644
    'zh-CN': zhCN,
 diff --git a/src/utils/i18n/pt_BR.json b/src/utils/i18n/pt_BR.json
 new file mode 100644
-index 0000000..4393a3f
+index 0000000..0d52a2e
 --- /dev/null
 +++ b/src/utils/i18n/pt_BR.json
-@@ -0,0 +1,592 @@
+@@ -0,0 +1,595 @@
 +{
 +  "Login": {
 +    "One": "Entrar"
@@ -1144,6 +1192,9 @@ index 0000000..4393a3f
 +  },
 +  "StoreBoard": {
 +    "One": "Lojas e computadores"
++  },
++  "Protecao": {
++    "One": "Proteção"
 +  }
 +}
 \ No newline at end of file
@@ -2393,3 +2444,270 @@ index fd232ac..2796500 100644
    }
  }
  </style>
+diff --git a/src/views/protecao/index.vue b/src/views/protecao/index.vue
+new file mode 100644
+index 0000000..f49f63c
+--- /dev/null
++++ b/src/views/protecao/index.vue
+@@ -0,0 +1,261 @@
++<template>
++  <div class="prot" v-loading="loading">
++    <p class="lead">Escolha a loja ou o setor e ligue as travas. As regras valem mesmo sem internet, direto no computador.</p>
++
++    <div class="kpis">
++      <div class="kpi"><span class="ic teal"><el-icon><el-icon-finished/></el-icon></span><div><div class="num">{{ kpis.protected }}</div><div class="lbl">PCs protegidos</div></div></div>
++      <div class="kpi"><span class="ic red"><el-icon><el-icon-circle-close/></el-icon></span><div><div class="num">{{ kpis.installsToday }}</div><div class="lbl">Instalações bloqueadas (hoje)</div></div></div>
++      <div class="kpi"><span class="ic blue"><el-icon><el-icon-connection/></el-icon></span><div><div class="num">{{ kpis.sitesToday }}</div><div class="lbl">Sites bloqueados (hoje)</div></div></div>
++      <div class="kpi"><span class="ic amber"><el-icon><el-icon-timer/></el-icon></span><div><div class="num">{{ kpis.releasesActive }}</div><div class="lbl">Liberações temporárias ativas</div></div></div>
++    </div>
++
++    <div class="cols">
++      <!-- árvore -->
++      <div class="card tree-card">
++        <h3><el-icon><el-icon-shop/></el-icon>Aplicar em</h3>
++        <div class="tree">
++          <a :class="{ on: sel.scope === 'global' }" @click="pick('global', '', 'Todas as lojas')"><el-icon><el-icon-office-building/></el-icon>Geral (todas as lojas)</a>
++          <template v-for="st in stores" :key="st.name">
++            <a :class="{ on: sel.scope === 'store' && sel.key === st.name }" @click="pick('store', st.name, st.name)"><span class="dot"></span>{{ st.name }}<span class="count">{{ st.total }}</span></a>
++            <div class="sub">
++              <a v-for="sec in st.sectors" :key="sec" :class="{ on: sel.scope === 'sector' && sel.key === st.name + ' / ' + sec }" @click="pick('sector', st.name + ' / ' + sec, sec)"><span class="dot sm"></span>{{ sec }}</a>
++            </div>
++          </template>
++          <div v-if="!stores.length" class="empty">Crie lojas em "Lojas e computadores" para aplicar por loja. Por enquanto dá para usar o Geral.</div>
++        </div>
++      </div>
++
++      <!-- regras -->
++      <div class="card">
++        <div class="rules-head">
++          <h3><el-icon><el-icon-finished/></el-icon>Regras de <b>{{ sel.label }}</b></h3>
++          <el-button type="primary" :loading="saving" :disabled="!dirty" icon="ElIconCheck" @click="save">Salvar</el-button>
++        </div>
++
++        <div class="rule" :class="{ active: rule.blockInstall }">
++          <span class="ic"><el-icon><el-icon-circle-close/></el-icon></span>
++          <div class="txt">
++            <b>Bloquear instalação de programas</b>
++            <p>Impede instalar qualquer programa fora da lista. Pega até os que instalam sozinhos (Chrome, AnyDesk, jogos).</p>
++            <div v-if="rule.blockInstall" class="detail">
++              <span class="hint">Programas liberados (nome do arquivo, ex.: sistema.exe):</span>
++              <chips v-model="rule.installAllow" placeholder="ex.: sistema.exe" @change="touch"/>
++            </div>
++          </div>
++          <el-switch v-model="rule.blockInstall" @change="touch"/>
++        </div>
++
++        <div class="rule" :class="{ active: rule.blockSites }">
++          <span class="ic"><el-icon><el-icon-connection/></el-icon></span>
++          <div class="txt">
++            <b>Bloquear sites</b>
++            <p>Vale em qualquer navegador, inclusive aba anônima.</p>
++            <div v-if="rule.blockSites" class="detail">
++              <el-radio-group v-model="rule.sitesMode" @change="touch" class="seg">
++                <el-radio-button label="block">Bloquear estes</el-radio-button>
++                <el-radio-button label="allow">Só liberar estes</el-radio-button>
++              </el-radio-group>
++              <chips v-model="rule.sitesList" placeholder="ex.: facebook.com" @change="touch"/>
++            </div>
++          </div>
++          <el-switch v-model="rule.blockSites" @change="touch"/>
++        </div>
++
++        <div class="rule" :class="{ active: rule.adultBlock }">
++          <span class="ic"><el-icon><el-icon-finished/></el-icon></span>
++          <div class="txt"><b>Bloquear conteúdo adulto</b><p>Categoria pronta, sem precisar listar site por site.</p></div>
++          <el-switch v-model="rule.adultBlock" @change="touch"/>
++        </div>
++
++        <div class="rule" :class="{ active: rule.forceStandardUser }">
++          <span class="ic"><el-icon><el-icon-user/></el-icon></span>
++          <div class="txt"><b>Forçar contas sem administrador</b><p>Garante que o funcionário use conta "padrão" do Windows. Sozinho já barra a maioria das instalações.</p></div>
++          <el-switch v-model="rule.forceStandardUser" @change="touch"/>
++        </div>
++
++        <el-alert type="warning" :closable="false" show-icon class="rel-note"
++                  title="Liberação para o técnico"
++                  description="Precisa instalar algo agora? Libere o computador por um tempo e ele trava de volta sozinho. Escolha o PC na lista abaixo e clique em Liberar."/>
++      </div>
++    </div>
++
++    <!-- dispositivos -->
++    <div class="section-title">Computadores com o ExpressChat Proteção
++      <small v-if="!devices.length">— nenhum instalado ainda. O programa será gerado na próxima etapa.</small>
++    </div>
++    <div class="pcs" v-if="devices.length">
++      <div v-for="d in devices" :key="d.id" class="pc" :class="{ off: !d.online }">
++        <div class="h">
++          <span class="st"></span>
++          <b>{{ d.hostname || d.id }}</b>
++          <span v-if="d.release" class="shield amber"><el-icon><el-icon-timer/></el-icon>Liberado {{ minsLeft(d.release) }}min</span>
++          <span v-else class="shield"><el-icon><el-icon-finished/></el-icon>Protegido</span>
++        </div>
++        <div class="m">
++          <span>{{ d.online ? 'online' : 'offline' }}<template v-if="d.storeName"> · {{ d.storeName }}<template v-if="d.sector"> / {{ d.sector }}</template></template></span>
++          <span><b>{{ (d.stats && d.stats.installsBlockedToday) || 0 }}</b> bloqueios hoje</span>
++        </div>
++        <div class="acts">
++          <el-select :model-value="d.storeName ? d.storeName + '||' + (d.sector || '') : ''" size="small" placeholder="Vincular à loja" @change="v => assign(d, v)" class="assign">
++            <el-option v-for="st in stores" :key="st.name" :label="st.name" :value="st.name + '||'"/>
++            <el-option-group v-for="st in stores" :key="st.name + '-g'" :label="st.name">
++              <el-option v-for="sec in st.sectors" :key="sec" :label="st.name + ' / ' + sec" :value="st.name + '||' + sec"/>
++            </el-option-group>
++          </el-select>
++          <el-button size="small" icon="ElIconTimer" @click="doRelease(d, 30)">Liberar 30min</el-button>
++          <el-button v-if="d.release" size="small" type="danger" text @click="doRelease(d, 0)">Travar</el-button>
++        </div>
++      </div>
++    </div>
++
++    <p class="foot-note">As regras ficam guardadas no seu servidor e são aplicadas pelo programa ExpressChat Proteção, que roda em cada computador.</p>
++  </div>
++</template>
++
++<script setup>
++import { ref, reactive, computed, onMounted, h } from 'vue'
++import { ElMessage } from 'element-plus'
++import * as prot from '@/api/protecao'
++import { list as groupList } from '@/api/device_group'
++
++const DEFAULT = { blockInstall: false, installAllow: [], blockSites: false, sitesMode: 'block', sitesList: [], adultBlock: false, forceStandardUser: false }
++
++const loading = ref(false)
++const saving = ref(false)
++const dirty = ref(false)
++const kpis = reactive({ protected: 0, installsToday: 0, sitesToday: 0, releasesActive: 0 })
++const stores = ref([])
++const devices = ref([])
++const sel = reactive({ scope: 'global', key: '', label: 'Todas as lojas' })
++const rule = reactive(Object.assign({}, DEFAULT))
++
++// editor de chips
++const Chips = (props, { emit }) => {
++  const add = (e) => {
++    const v = (e.target.value || '').trim().toLowerCase()
++    if (v && !props.modelValue.includes(v)) { emit('update:modelValue', [...props.modelValue, v]); emit('change') }
++    e.target.value = ''
++  }
++  const del = (i) => { const a = props.modelValue.slice(); a.splice(i, 1); emit('update:modelValue', a); emit('change') }
++  return h('div', { class: 'chips' }, [
++    ...props.modelValue.map((c, i) => h('span', { class: 'chip' }, [c, h('b', { class: 'x', onClick: () => del(i) }, '×')])),
++    h('input', { class: 'chip-in', placeholder: props.placeholder || 'adicionar', onKeyup: (e) => { if (e.key === 'Enter') add(e) }, onBlur: add }),
++  ])
++}
++Chips.props = ['modelValue', 'placeholder']
++Chips.emits = ['update:modelValue', 'change']
++
++const splitName = (n) => { const i = n.indexOf(' / '); return i === -1 ? [n.trim(), ''] : [n.slice(0, i).trim(), n.slice(i + 3).trim()] }
++
++async function loadGroups () {
++  const res = await groupList({ page: 1, page_size: 500 }).catch(() => false)
++  const list = res?.data?.list || []
++  const map = {}
++  list.forEach(g => {
++    const [store, sector] = splitName(g.name || '')
++    map[store] = map[store] || { name: store, sectors: [], total: 0 }
++    if (sector) map[store].sectors.push(sector)
++  })
++  stores.value = Object.values(map).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
++}
++
++async function loadOverview () {
++  const res = await prot.overview().catch(() => null)
++  if (!res) return
++  Object.assign(kpis, res.kpis)
++  devices.value = res.devices
++  // conta PCs por loja para a árvore
++  const byStore = {}
++  res.devices.forEach(d => { if (d.storeName) byStore[d.storeName] = (byStore[d.storeName] || 0) + 1 })
++  stores.value.forEach(s => { s.total = byStore[s.name] || 0 })
++}
++
++async function pick (scope, key, label) {
++  sel.scope = scope; sel.key = key; sel.label = label
++  const res = await prot.getRule(scope, key).catch(() => ({ rule: Object.assign({}, DEFAULT) }))
++  Object.assign(rule, DEFAULT, res.rule)
++  dirty.value = false
++}
++const touch = () => { dirty.value = true }
++
++async function save () {
++  saving.value = true
++  try {
++    await prot.saveRule(sel.scope, sel.key, { ...rule })
++    dirty.value = false
++    ElMessage.success('Regras salvas para ' + sel.label)
++    loadOverview()
++  } catch (e) { ElMessage.error(e.message) } finally { saving.value = false }
++}
++
++const minsLeft = (until) => Math.max(0, Math.round((until - Date.now()) / 60000))
++async function assign (d, v) {
++  const [store, sector] = String(v).split('||')
++  await prot.assignDevice(d.id, store, sector).catch(e => ElMessage.error(e.message))
++  d.storeName = store; d.sector = sector
++  ElMessage.success('Computador vinculado a ' + store + (sector ? ' / ' + sector : ''))
++}
++async function doRelease (d, minutes) {
++  const r = await prot.release(d.id, minutes).catch(e => { ElMessage.error(e.message); return null })
++  if (r) { d.release = r.release ? r.release.until : 0; ElMessage.success(minutes ? 'Liberado por ' + minutes + ' min' : 'Travado de novo') }
++}
++
++onMounted(async () => {
++  loading.value = true
++  try { await loadGroups(); await loadOverview(); await pick('global', '', 'Todas as lojas') }
++  catch (e) { ElMessage.error('Não deu para carregar a Proteção. ' + e.message) }
++  finally { loading.value = false }
++})
++</script>
++
++<style scoped lang="scss">
++.prot { padding: 2px; }
++.lead { margin: 0 0 16px; color: var(--el-text-color-secondary); }
++.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 18px; }
++.kpi { background: var(--el-bg-color); border: 1px solid var(--el-border-color-lighter); border-radius: 14px; padding: 16px; display: flex; gap: 14px; align-items: center; }
++.kpi .ic { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; flex: 0 0 46px; }
++.kpi .ic.teal { background: #e6f6f3; color: #17b39b } .kpi .ic.red { background: #fdecef; color: #d9576f }
++.kpi .ic.blue { background: #e8f1f9; color: #3f86c0 } .kpi .ic.amber { background: #fcf3e3; color: #e8a33d }
++.kpi .num { font-size: 26px; font-weight: 800; line-height: 1.1 } .kpi .lbl { color: var(--el-text-color-secondary); font-size: 13px; margin-top: 2px }
++
++.cols { display: grid; grid-template-columns: 270px 1fr; gap: 18px; }
++.card { background: var(--el-bg-color); border: 1px solid var(--el-border-color-lighter); border-radius: 14px; padding: 16px 18px; }
++.card h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; margin: 0 0 12px; }
++.rules-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; h3 { margin: 0 } b { color: #0e7f6e } }
++
++.tree a { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 9px; color: var(--el-text-color-primary); font-size: 14px; cursor: pointer; }
++.tree a:hover { background: var(--el-fill-color-light) }
++.tree a.on { background: #e6f6f3; color: #0e7f6e; font-weight: 700 }
++.tree .sub { margin-left: 14px }
++.tree .dot { width: 8px; height: 8px; border-radius: 50%; background: #17b39b } .tree .dot.sm { background: #9fd8cd }
++.tree .count { margin-left: auto; font-size: 12px; color: var(--el-text-color-secondary); background: var(--el-fill-color); border-radius: 999px; padding: 1px 8px }
++.tree .empty { color: var(--el-text-color-secondary); font-size: 13px; padding: 8px 4px }
++
++.rule { display: flex; gap: 14px; align-items: flex-start; padding: 16px 0; border-bottom: 1px solid var(--el-border-color-lighter); }
++.rule:last-of-type { border-bottom: 0 }
++.rule .ic { width: 42px; height: 42px; border-radius: 11px; background: var(--el-fill-color-light); color: var(--el-text-color-secondary); display: grid; place-items: center; font-size: 20px; flex: 0 0 42px; }
++.rule.active .ic { background: #e6f6f3; color: #17b39b }
++.rule .txt { flex: 1 } .rule .txt b { font-size: 15px } .rule .txt p { color: var(--el-text-color-secondary); font-size: 13px; margin-top: 3px; line-height: 1.4 }
++.detail { margin-top: 10px } .hint { display: block; font-size: 12px; color: var(--el-text-color-secondary); margin-bottom: 6px }
++.seg { margin-bottom: 8px }
++.seg :deep(.el-radio-button__inner) { font-size: 13px }
++
++:deep(.chips) { display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
++:deep(.chip) { background: #e6f6f3; border: 1px solid #bfe9e1; color: #0e7f6e; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px }
++:deep(.chip .x) { cursor: pointer; opacity: .55 } :deep(.chip .x:hover) { opacity: 1 }
++:deep(.chip-in) { border: 1px dashed var(--el-border-color); border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 12px; outline: none; background: transparent; color: var(--el-text-color-primary); width: 150px }
++
++.rel-note { margin-top: 16px }
++.section-title { font-size: 16px; font-weight: 700; margin: 26px 0 12px; small { color: var(--el-text-color-secondary); font-weight: 500 } }
++.pcs { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px }
++.pc { border: 1px solid var(--el-border-color-lighter); border-radius: 12px; padding: 12px; border-left: 4px solid #17b39b; background: var(--el-bg-color) }
++.pc.off { border-left-color: #b8c4ce }
++.pc .h { display: flex; align-items: center; gap: 8px } .pc .st { width: 9px; height: 9px; border-radius: 50%; background: #17b39b } .pc.off .st { background: #b8c4ce }
++.pc b { font-size: 14px }
++.pc .shield { margin-left: auto; display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #0e7f6e; background: #e6f6f3; border-radius: 999px; padding: 3px 8px }
++.pc .shield.amber { color: #a86d12; background: #fcf3e3 }
++.pc .m { color: var(--el-text-color-secondary); font-size: 12px; margin: 7px 0; display: flex; justify-content: space-between } .pc .m b { color: #d9576f }
++.pc .acts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center } .assign { width: 100% ; margin-bottom: 2px }
++.foot-note { color: var(--el-text-color-secondary); font-size: 12px; margin-top: 16px }
++@media (max-width: 860px) { .cols { grid-template-columns: 1fr } }
++</style>

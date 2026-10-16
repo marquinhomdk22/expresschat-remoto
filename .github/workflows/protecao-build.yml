@@ -1,0 +1,38 @@
+name: ExpressChat Proteção - gerar instalador Windows
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Compilar o agente (Windows x64)
+        shell: pwsh
+        working-directory: protecao/agent
+        env:
+          GOFLAGS: -mod=mod
+          GOPROXY: 'off'
+        run: |
+          go build -ldflags "-s -w" -o ../installer/ExpressChatProtecao.exe .
+      - name: Instalar o Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+      - name: Gerar o instalador
+        shell: pwsh
+        working-directory: protecao/installer
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" ExpressChatProtecao.iss
+          dir Output
+      - name: Publicar na release "protecao"
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release view protecao 2>$null; if ($LASTEXITCODE -ne 0) { gh release create protecao --title "ExpressChat Proteção" --notes "Instalador do agente de proteção." }
+          gh release upload protecao protecao/installer/Output/ExpressChatProtecao-Setup.exe --clobber

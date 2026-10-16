@@ -72,15 +72,17 @@ async function authAdmin (req, res, next) {
   const token = req.headers['x-ec-token']
   if (!token) return res.status(401).json({ error: 'sem token' })
   const c = tokenCache.get(token)
-  if (c && c.exp > now()) { req.user = c.user; req.tenant = tenant(String(c.user.id)); return next() }
+  if (c && c.exp > now()) { req.user = c.user; req.tenant = tenant(c.user._tenant); return next() }
   try {
     const r = await fetch(RUSTDESK_API_BASE + '/api/admin/user/current', { headers: { 'api-token': token } })
     const j = await r.json().catch(() => ({}))
-    const user = j && (j.data || (j.id ? j : null))
-    if (!r.ok || !user || !user.id) return res.status(401).json({ error: 'token inválido' })
+    const user = j && (j.data || j)
+    const uid = user && (user.id != null ? String(user.id) : user.username)
+    if (!r.ok || !uid) return res.status(401).json({ error: 'token inválido' })
+    user._tenant = uid
     tokenCache.set(token, { user, exp: now() + 60000 })
     req.user = user
-    req.tenant = tenant(String(user.id))
+    req.tenant = tenant(uid)
     next()
   } catch (e) {
     res.status(502).json({ error: 'não deu para validar o login' })
@@ -112,7 +114,7 @@ function effectiveRule (t, dev) {
 
 // ---------- endpoints do painel ----------
 app.get('/admin/me', authAdmin, (req, res) => {
-  res.json({ user: { id: req.user.id, username: req.user.username }, enrollToken: req.tenant.enrollToken })
+  res.json({ user: { username: req.user.username }, enrollToken: req.tenant.enrollToken })
 })
 
 app.get('/admin/rules', authAdmin, (req, res) => {

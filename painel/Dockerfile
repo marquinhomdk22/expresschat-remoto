@@ -1,3 +1,3 @@
 FROM lejianwen/rustdesk-api:latest
-ADD https://raw.githubusercontent.com/marquinhomdk22/expresschat-remoto/7c9d4a1/painel/admin.tar.gz /tmp/admin.tar.gz
+ADD https://raw.githubusercontent.com/marquinhomdk22/expresschat-remoto/9d7e0f3/painel/admin.tar.gz /tmp/admin.tar.gz
 RUN rm -rf /app/resources/admin && mkdir -p /app/resources/admin && tar xzf /tmp/admin.tar.gz -C /app/resources/admin && rm /tmp/admin.tar.gz

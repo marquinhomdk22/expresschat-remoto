@@ -29,7 +29,7 @@ const (
 	displayName  = "ExpressChat Proteção"
 	description  = "Aplica as regras de proteção definidas no painel ExpressChat (bloqueio de instalação e de sites). Gerenciado pela ExpressChat."
 	defaultSrv   = "https://painel-remoto.link-br.site/ec-protecao"
-	version      = "1.0.0"
+	version      = "1.0.1"
 	hostsBegin   = "# >>> ExpressChat Protecao >>>"
 	hostsEnd     = "# <<< ExpressChat Protecao <<<"
 	familyDNS1   = "208.67.222.123" // OpenDNS FamilyShield

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/sys/windows/registry"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 )
@@ -31,6 +32,23 @@ func newGUID() string {
 	return hex.EncodeToString(b)
 }
 
+// identidade estável da máquina: usa o MachineGuid do Windows, que sobrevive a
+// reinstalações do agente — evita cadastro duplicado no painel. Se não achar,
+// cai no GUID aleatório.
+func machineGUID() string {
+	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Cryptography`, registry.QUERY_VALUE|registry.WOW64_64KEY)
+	if err == nil {
+		defer k.Close()
+		if v, _, err := k.GetStringValue("MachineGuid"); err == nil {
+			v = strings.ReplaceAll(strings.TrimSpace(v), "-", "")
+			if v != "" {
+				return "mg-" + v
+			}
+		}
+	}
+	return newGUID()
+}
+
 // install: grava a configuração, registra e inicia o serviço.
 // flags: --server= --enroll= --senha=
 func cmdInstall(args []string) error {
@@ -52,7 +70,7 @@ func cmdInstall(args []string) error {
 		c.UninstallKey = v
 	}
 	if c.GUID == "" {
-		c.GUID = newGUID()
+		c.GUID = machineGUID()
 	}
 	if err := saveConfig(c); err != nil {
 		return err

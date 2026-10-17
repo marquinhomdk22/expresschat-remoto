@@ -125,6 +125,7 @@ app.get('/admin/rules', authAdmin, (req, res) => {
 app.post('/admin/rules', authAdmin, (req, res) => {
   const { scope = 'global', key = '', data = {} } = req.body || {}
   if (!['global', 'store', 'sector', 'pc'].includes(scope)) return res.status(400).json({ error: 'scope inválido' })
+  if (data && data.__clear) { delete req.tenant.rules[scopeKey(scope, key)]; save(); return res.json({ ok: true, cleared: true }) }
   const clean = Object.assign({}, DEFAULT_RULE)
   for (const k of Object.keys(DEFAULT_RULE)) if (k in data) clean[k] = data[k]
   clean.installAllow = (clean.installAllow || []).slice(0, 200).map(String)
@@ -176,6 +177,16 @@ app.post('/admin/release', authAdmin, (req, res) => {
   else d.release = { until: now() + Math.min(Number(minutes) || 30, 24 * 60) * 60000, by: req.user.username }
   save()
   res.json({ ok: true, release: d.release })
+})
+
+// remove o cadastro de um computador (ex.: duplicado por reinstalação)
+app.post('/admin/device/remove', authAdmin, (req, res) => {
+  const { deviceId } = req.body || {}
+  const d = db.devices[deviceId]
+  if (!d || d.tenant !== req.tenant.id) return res.status(404).json({ error: 'computador não encontrado' })
+  delete db.devices[deviceId]
+  save()
+  res.json({ ok: true })
 })
 
 app.get('/admin/events', authAdmin, (req, res) => {
